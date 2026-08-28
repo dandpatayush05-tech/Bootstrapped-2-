@@ -1,0 +1,88 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Rate Limit Configuration Schema",
+  "description": "Validates the rate-limit.config.js output structure for each environment",
+  "type": "object",
+  "required": ["auth", "public", "authenticated", "abuse", "redis"],
+  "properties": {
+    "auth": {
+      "type": "object",
+      "required": ["perIp", "perAccount", "failureBackoff", "hardCooldownMs"],
+      "properties": {
+        "perIp": {
+          "type": "object",
+          "required": ["maxRequests", "windowMs"],
+          "properties": {
+            "maxRequests": { "type": "integer", "minimum": 1, "description": "Max auth requests from a single IP within the window" },
+            "windowMs":    { "type": "integer", "minimum": 1000, "description": "Time window in milliseconds" }
+          }
+        },
+        "perAccount": {
+          "type": "object",
+          "required": ["maxRequests", "windowMs"],
+          "properties": {
+            "maxRequests": { "type": "integer", "minimum": 1, "description": "Max auth requests targeting a single account within the window" },
+            "windowMs":    { "type": "integer", "minimum": 1000 }
+          }
+        },
+        "failureBackoff": {
+          "type": "object",
+          "required": ["baseDelayMs", "multiplier", "maxDelayMs", "failureWindow", "maxFailures"],
+          "properties": {
+            "baseDelayMs":   { "type": "integer", "minimum": 100,  "description": "Initial backoff delay after first failure" },
+            "multiplier":    { "type": "integer", "minimum": 1,    "description": "Exponential multiplier (typically 2)" },
+            "maxDelayMs":    { "type": "integer", "minimum": 1000, "description": "Maximum backoff delay cap" },
+            "failureWindow": { "type": "integer", "minimum": 1000, "description": "Window in which failures are tracked" },
+            "maxFailures":   { "type": "integer", "minimum": 1,    "description": "Failure count that triggers hard cooldown" }
+          }
+        },
+        "hardCooldownMs": { "type": "integer", "minimum": 1000, "description": "Total lockout duration after maxFailures is reached" }
+      }
+    },
+    "public": {
+      "type": "object",
+      "required": ["perIp"],
+      "properties": {
+        "perIp": {
+          "type": "object",
+          "required": ["maxRequests", "windowMs"],
+          "properties": {
+            "maxRequests": { "type": "integer", "minimum": 1 },
+            "windowMs":    { "type": "integer", "minimum": 1000 }
+          }
+        }
+      }
+    },
+    "authenticated": {
+      "type": "object",
+      "required": ["perUser"],
+      "properties": {
+        "perUser": {
+          "type": "object",
+          "required": ["maxRequests", "windowMs"],
+          "properties": {
+            "maxRequests": { "type": "integer", "minimum": 1 },
+            "windowMs":    { "type": "integer", "minimum": 1000 }
+          }
+        }
+      }
+    },
+    "abuse": {
+      "type": "object",
+      "required": ["flagThreshold", "flagWindowMs", "alertEnabled"],
+      "properties": {
+        "flagThreshold": { "type": "integer", "minimum": 1, "description": "Number of rate-limit hits before flagging for review" },
+        "flagWindowMs":  { "type": "integer", "minimum": 1000 },
+        "alertEnabled":  { "type": "boolean" }
+      }
+    },
+    "redis": {
+      "type": "object",
+      "required": ["keyPrefix", "ttlBufferMs"],
+      "properties": {
+        "keyPrefix":   { "type": "string", "pattern": "^rl:[a-z]+:$" },
+        "ttlBufferMs": { "type": "integer", "minimum": 0 }
+      }
+    }
+  }
+}

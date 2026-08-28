@@ -1,0 +1,691 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Hackverse | Sign In</title>
+  <meta name="description" content="Sign in or create an account to access Hackverse — your 24/7 hackathon concierge." />
+
+  <!-- Google Fonts: Outfit & Plus Jakarta Sans -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@500;600;700;800&family=Plus+Jakarta+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
+
+  <!-- Remix Icons -->
+  <link href="https://cdn.jsdelivr.net/npm/remixicon@4.2.0/fonts/remixicon.css" rel="stylesheet" />
+
+  <style>
+    :root {
+      --bg-dark: #0a0a0d;
+      --bg-card: rgba(18, 18, 24, 0.85);
+      --bg-input: rgba(25, 25, 35, 0.9);
+      --bg-input-focus: rgba(30, 30, 42, 1);
+      --text-main: #f8fafc;
+      --text-muted: #94a3b8;
+      --text-sub: #cbd5e1;
+      --accent-purple: #9c40ff;
+      --accent-orange: #ffaa40;
+      --accent-green: #10b981;
+      --accent-red: #ef4444;
+      --border-subtle: rgba(255, 255, 255, 0.06);
+      --border-focus: rgba(156, 64, 255, 0.5);
+      --gradient-brand: linear-gradient(135deg, #ffaa40, #9c40ff);
+      --gradient-glow: linear-gradient(135deg, #9c40ff, #00ffff);
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background-color: var(--bg-dark);
+      color: var(--text-main);
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      overflow-x: hidden;
+      position: relative;
+      padding: 16px;
+    }
+
+    /* Ambient Glows */
+    .ambient-glow {
+      position: fixed;
+      width: 600px;
+      height: 600px;
+      border-radius: 50%;
+      filter: blur(140px);
+      pointer-events: none;
+      z-index: 0;
+      opacity: 0.22;
+    }
+    .glow-top {
+      top: -200px;
+      left: 30%;
+      background: radial-gradient(circle, #9c40ff 0%, #ffaa40 50%, transparent 70%);
+    }
+    .glow-bottom {
+      bottom: -200px;
+      right: 15%;
+      background: radial-gradient(circle, #00ffff 0%, #6366f1 60%, transparent 70%);
+    }
+
+    /* Auth Container — Glassmorphism Card */
+    .auth-container {
+      position: relative;
+      z-index: 10;
+      width: 100%;
+      max-width: 460px;
+      animation: fadeSlideUp 0.6s cubic-bezier(0.16, 1, 0.3, 1) both;
+    }
+
+    @keyframes fadeSlideUp {
+      from {
+        opacity: 0;
+        transform: translateY(30px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    /* Animated Border Beam wrapper */
+    .auth-border-beam {
+      position: relative;
+      border-radius: 24px;
+      padding: 2px;
+      overflow: hidden;
+      box-shadow: 0 20px 60px -15px rgba(0, 0, 0, 0.9), 0 0 40px rgba(156, 64, 255, 0.2);
+    }
+
+    .auth-border-beam::before {
+      content: '';
+      position: absolute;
+      top: -50%;
+      left: -50%;
+      width: 200%;
+      height: 200%;
+      background: conic-gradient(
+        transparent 0deg,
+        transparent 270deg,
+        #ffaa40 300deg,
+        #9c40ff 335deg,
+        #00ffff 360deg
+      );
+      animation: beam-rotate 6s linear infinite;
+      z-index: 0;
+    }
+
+    @keyframes beam-rotate {
+      from { transform: rotate(0deg); }
+      to { transform: rotate(360deg); }
+    }
+
+    .auth-card {
+      position: relative;
+      z-index: 1;
+      background: var(--bg-card);
+      backdrop-filter: blur(40px);
+      -webkit-backdrop-filter: blur(40px);
+      border-radius: 22px;
+      padding: 40px 36px;
+      border: 1px solid var(--border-subtle);
+    }
+
+    /* Brand Header */
+    .auth-brand {
+      text-align: center;
+      margin-bottom: 32px;
+    }
+
+    .auth-brand-icon {
+      width: 56px;
+      height: 56px;
+      border-radius: 16px;
+      background: var(--gradient-brand);
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      color: #fff;
+      font-size: 1.6rem;
+      margin-bottom: 16px;
+      box-shadow: 0 0 30px rgba(156, 64, 255, 0.4);
+    }
+
+    .auth-brand h1 {
+      font-family: 'Outfit', sans-serif;
+      font-size: 1.75rem;
+      font-weight: 800;
+      letter-spacing: -0.02em;
+      margin-bottom: 6px;
+      background: linear-gradient(135deg, #ffffff 40%, #c4b5fd 100%);
+      -webkit-background-clip: text;
+      background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+    .auth-brand p {
+      font-size: 0.9rem;
+      color: var(--text-muted);
+      line-height: 1.5;
+    }
+
+    /* Tab Switcher */
+    .auth-tabs {
+      display: flex;
+      background: rgba(255, 255, 255, 0.04);
+      border-radius: 12px;
+      padding: 4px;
+      margin-bottom: 28px;
+      border: 1px solid var(--border-subtle);
+    }
+
+    .auth-tab {
+      flex: 1;
+      padding: 10px 0;
+      border: none;
+      background: transparent;
+      color: var(--text-muted);
+      font-family: 'Plus Jakarta Sans', sans-serif;
+      font-size: 0.9rem;
+      font-weight: 600;
+      cursor: pointer;
+      border-radius: 10px;
+      transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+
+    .auth-tab.active {
+      background: var(--gradient-brand);
+      color: #fff;
+      box-shadow: 0 4px 16px rgba(156, 64, 255, 0.3);
+    }
+
+    .auth-tab:not(.active):hover {
+      color: var(--text-main);
+      background: rgba(255, 255, 255, 0.06);
+    }
+
+    /* Form Styles */
+    .auth-form {
+      display: none;
+    }
+
+    .auth-form.active {
+      display: block;
+      animation: fadeIn 0.35s ease;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(8px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .form-group {
+      margin-bottom: 18px;
+    }
+
+    .form-label {
+      display: block;
+      font-size: 0.8rem;
+      font-weight: 600;
+      color: var(--text-sub);
+      margin-bottom: 6px;
+      letter-spacing: 0.02em;
+    }
+
+    .input-wrapper {
+      position: relative;
+    }
+
+    .input-icon {
+      position: absolute;
+      left: 14px;
+      top: 50%;
+      transform: translateY(-50%);
+      font-size: 1.1rem;
+      color: var(--text-muted);
+      pointer-events: none;
+      transition: color 0.2s;
+    }
+
+    .form-input {
+      width: 100%;
+      padding: 12px 14px 12px 42px;
+      background: var(--bg-input);
+      border: 1px solid var(--border-subtle);
+      border-radius: 12px;
+      color: var(--text-main);
+      font-family: inherit;
+      font-size: 0.9rem;
+      transition: all 0.25s ease;
+      outline: none;
+    }
+
+    .form-input:focus {
+      background: var(--bg-input-focus);
+      border-color: var(--border-focus);
+      box-shadow: 0 0 0 3px rgba(156, 64, 255, 0.15);
+    }
+
+    .form-input:focus + .input-icon,
+    .form-input:focus ~ .input-icon {
+      color: var(--accent-purple);
+    }
+
+    .form-input::placeholder {
+      color: rgba(148, 163, 184, 0.5);
+    }
+
+    /* Password Toggle */
+    .password-toggle {
+      position: absolute;
+      right: 14px;
+      top: 50%;
+      transform: translateY(-50%);
+      background: none;
+      border: none;
+      color: var(--text-muted);
+      cursor: pointer;
+      font-size: 1.1rem;
+      padding: 4px;
+      transition: color 0.2s;
+    }
+
+    .password-toggle:hover {
+      color: var(--text-main);
+    }
+
+    /* Password Strength Bar */
+    .password-strength {
+      margin-top: 8px;
+      opacity: 0;
+      transform: translateY(-4px);
+      transition: all 0.3s ease;
+    }
+
+    .password-strength.visible {
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    .strength-bar-track {
+      height: 4px;
+      background: rgba(255, 255, 255, 0.08);
+      border-radius: 4px;
+      overflow: hidden;
+    }
+
+    .strength-bar-fill {
+      height: 100%;
+      width: 0%;
+      border-radius: 4px;
+      transition: width 0.4s ease, background 0.4s ease;
+    }
+
+    .strength-label {
+      display: flex;
+      justify-content: space-between;
+      margin-top: 4px;
+      font-size: 0.72rem;
+      font-weight: 600;
+    }
+
+    .strength-weak { background: var(--accent-red); }
+    .strength-fair { background: #f59e0b; }
+    .strength-good { background: #3b82f6; }
+    .strength-strong { background: var(--accent-green); }
+
+    /* Submit Button */
+    .btn-auth {
+      width: 100%;
+      padding: 14px;
+      border: none;
+      border-radius: 12px;
+      background: var(--gradient-brand);
+      color: #fff;
+      font-family: 'Outfit', sans-serif;
+      font-size: 1rem;
+      font-weight: 700;
+      cursor: pointer;
+      letter-spacing: 0.01em;
+      transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+      position: relative;
+      overflow: hidden;
+      margin-top: 8px;
+    }
+
+    .btn-auth:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 8px 30px rgba(156, 64, 255, 0.4);
+    }
+
+    .btn-auth:active {
+      transform: translateY(0);
+    }
+
+    .btn-auth:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
+      transform: none;
+      box-shadow: none;
+    }
+
+    .btn-auth .btn-spinner {
+      display: none;
+      width: 20px;
+      height: 20px;
+      border: 2px solid rgba(255,255,255,0.3);
+      border-top-color: #fff;
+      border-radius: 50%;
+      animation: spin 0.6s linear infinite;
+      margin: 0 auto;
+    }
+
+    .btn-auth.loading .btn-text { display: none; }
+    .btn-auth.loading .btn-spinner { display: inline-block; }
+
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+
+    /* Divider */
+    .auth-divider {
+      display: flex;
+      align-items: center;
+      margin: 24px 0;
+      gap: 12px;
+    }
+
+    .auth-divider::before,
+    .auth-divider::after {
+      content: '';
+      flex: 1;
+      height: 1px;
+      background: var(--border-subtle);
+    }
+
+    .auth-divider span {
+      font-size: 0.78rem;
+      color: var(--text-muted);
+      font-weight: 500;
+    }
+
+    /* Footer link */
+    .auth-footer {
+      text-align: center;
+      margin-top: 20px;
+      font-size: 0.85rem;
+      color: var(--text-muted);
+    }
+
+    .auth-footer a {
+      color: var(--accent-purple);
+      text-decoration: none;
+      font-weight: 600;
+      transition: color 0.2s;
+    }
+
+    .auth-footer a:hover {
+      color: var(--accent-orange);
+    }
+
+    /* Back to home link */
+    .back-link {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      margin-bottom: 20px;
+      color: var(--text-muted);
+      text-decoration: none;
+      font-size: 0.85rem;
+      font-weight: 500;
+      transition: color 0.2s;
+    }
+
+    .back-link:hover {
+      color: var(--text-main);
+    }
+
+    /* Error / Success Message */
+    .auth-message {
+      padding: 10px 14px;
+      border-radius: 10px;
+      font-size: 0.82rem;
+      font-weight: 500;
+      margin-bottom: 16px;
+      display: none;
+      align-items: center;
+      gap: 8px;
+      animation: fadeIn 0.3s ease;
+    }
+
+    .auth-message.show {
+      display: flex;
+    }
+
+    .auth-message.error {
+      background: rgba(239, 68, 68, 0.12);
+      border: 1px solid rgba(239, 68, 68, 0.25);
+      color: #fca5a5;
+    }
+
+    .auth-message.success {
+      background: rgba(16, 185, 129, 0.12);
+      border: 1px solid rgba(16, 185, 129, 0.25);
+      color: #6ee7b7;
+    }
+
+    /* Terms text */
+    .auth-terms {
+      text-align: center;
+      margin-top: 16px;
+      font-size: 0.72rem;
+      color: rgba(148, 163, 184, 0.6);
+      line-height: 1.5;
+    }
+
+    /* Responsive */
+    @media (max-width: 480px) {
+      .auth-card {
+        padding: 28px 20px;
+      }
+      .auth-brand h1 {
+        font-size: 1.45rem;
+      }
+    }
+  </style>
+</head>
+<body>
+  <!-- Ambient background glows -->
+  <div class="ambient-glow glow-top"></div>
+  <div class="ambient-glow glow-bottom"></div>
+
+  <div class="auth-container">
+    <!-- Back to home -->
+    <a href="index.html" class="back-link">
+      <i class="ri-arrow-left-line"></i>
+      Back to Hackverse
+    </a>
+
+    <!-- Animated border beam wrapper -->
+    <div class="auth-border-beam">
+      <div class="auth-card">
+        <!-- Brand -->
+        <div class="auth-brand">
+          <div class="auth-brand-icon">
+            <i class="ri-terminal-box-fill"></i>
+          </div>
+          <h1>Welcome to Hackverse</h1>
+          <p>Your 24/7 autonomous hackathon concierge</p>
+        </div>
+
+        <!-- Tab Switcher -->
+        <div class="auth-tabs">
+          <button class="auth-tab active" id="tab-login" type="button">Sign In</button>
+          <button class="auth-tab" id="tab-signup" type="button">Create Account</button>
+        </div>
+
+        <!-- Status Messages -->
+        <div class="auth-message" id="auth-message">
+          <i class="ri-error-warning-line"></i>
+          <span id="auth-message-text"></span>
+        </div>
+
+        <!-- ═══════════════════════════════════════ -->
+        <!-- LOGIN FORM                              -->
+        <!-- ═══════════════════════════════════════ -->
+        <form class="auth-form active" id="login-form" autocomplete="on" novalidate>
+          <div class="form-group">
+            <label class="form-label" for="login-email">Email Address</label>
+            <div class="input-wrapper">
+              <input
+                type="email"
+                class="form-input"
+                id="login-email"
+                name="email"
+                placeholder="you@example.com"
+                autocomplete="email"
+                required
+              />
+              <i class="ri-mail-line input-icon"></i>
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label" for="login-password">Password</label>
+            <div class="input-wrapper">
+              <input
+                type="password"
+                class="form-input"
+                id="login-password"
+                name="password"
+                placeholder="Enter your password"
+                autocomplete="current-password"
+                required
+              />
+              <i class="ri-lock-2-line input-icon"></i>
+              <button type="button" class="password-toggle" data-target="login-password" aria-label="Toggle password visibility">
+                <i class="ri-eye-off-line"></i>
+              </button>
+            </div>
+          </div>
+
+          <button type="submit" class="btn-auth" id="btn-login">
+            <span class="btn-text">Sign In</span>
+            <div class="btn-spinner"></div>
+          </button>
+        </form>
+
+        <!-- ═══════════════════════════════════════ -->
+        <!-- SIGNUP FORM                             -->
+        <!-- ═══════════════════════════════════════ -->
+        <form class="auth-form" id="signup-form" autocomplete="on" novalidate>
+          <div class="form-group">
+            <label class="form-label" for="signup-name">Full Name</label>
+            <div class="input-wrapper">
+              <input
+                type="text"
+                class="form-input"
+                id="signup-name"
+                name="name"
+                placeholder="Your full name"
+                autocomplete="name"
+                required
+              />
+              <i class="ri-user-line input-icon"></i>
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label" for="signup-email">Email Address</label>
+            <div class="input-wrapper">
+              <input
+                type="email"
+                class="form-input"
+                id="signup-email"
+                name="email"
+                placeholder="you@example.com"
+                autocomplete="email"
+                required
+              />
+              <i class="ri-mail-line input-icon"></i>
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label" for="signup-password">Password</label>
+            <div class="input-wrapper">
+              <input
+                type="password"
+                class="form-input"
+                id="signup-password"
+                name="password"
+                placeholder="Min 8 chars, mixed case + number"
+                autocomplete="new-password"
+                required
+              />
+              <i class="ri-lock-2-line input-icon"></i>
+              <button type="button" class="password-toggle" data-target="signup-password" aria-label="Toggle password visibility">
+                <i class="ri-eye-off-line"></i>
+              </button>
+            </div>
+            <!-- Password Strength Indicator -->
+            <div class="password-strength" id="password-strength">
+              <div class="strength-bar-track">
+                <div class="strength-bar-fill" id="strength-bar-fill"></div>
+              </div>
+              <div class="strength-label">
+                <span id="strength-text">Password strength</span>
+                <span id="strength-tips"></span>
+              </div>
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label" for="signup-confirm">Confirm Password</label>
+            <div class="input-wrapper">
+              <input
+                type="password"
+                class="form-input"
+                id="signup-confirm"
+                name="confirm-password"
+                placeholder="Re-enter your password"
+                autocomplete="new-password"
+                required
+              />
+              <i class="ri-lock-check-line input-icon"></i>
+            </div>
+          </div>
+
+          <button type="submit" class="btn-auth" id="btn-signup">
+            <span class="btn-text">Create Account</span>
+            <div class="btn-spinner"></div>
+          </button>
+
+          <div class="auth-terms">
+            By creating an account, you agree to participate in<br>
+            Hackverse events responsibly and ethically.
+          </div>
+        </form>
+
+        <!-- Divider -->
+        <div class="auth-divider">
+          <span>or</span>
+        </div>
+
+        <!-- Footer toggle -->
+        <div class="auth-footer" id="auth-footer">
+          Don't have an account? <a href="#" id="footer-switch-link">Create one</a>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="auth.js"></script>
+</body>
+</html>

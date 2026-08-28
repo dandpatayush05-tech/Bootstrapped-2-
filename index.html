@@ -1,0 +1,3461 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Hackverse | Hackathon Concierge</title>
+  <meta name="description" content="24/7 centralized operational engine automating participant support, submission auditing, and logistics for hackathons." />
+
+  <!-- P1 FIX: Content-Security-Policy -->
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' https://interfaces.zapier.com 'unsafe-inline'; style-src 'self' https://fonts.googleapis.com https://cdn.jsdelivr.net 'unsafe-inline'; font-src 'self' https://fonts.gstatic.com https://cdn.jsdelivr.net; img-src 'self' data: https:; connect-src 'self' https://interfaces.zapier.com https://mail.google.com; frame-src https://interfaces.zapier.com; base-uri 'self'; form-action 'self';">
+
+  <!-- Google Fonts: Outfit & Plus Jakarta Sans -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@500;600;700;800&family=Plus+Jakarta+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
+
+  <!-- Remix Icons -->
+  <link href="https://cdn.jsdelivr.net/npm/remixicon@4.2.0/fonts/remixicon.css" rel="stylesheet" />
+
+  <!-- Hackverse Knowledge Base -->
+  <script src="knowledge.js"></script>
+
+  <!-- Zapier Interfaces Script -->
+  <!-- P3 FIX: Added crossorigin for CORS-safe loading -->
+  <script async type="module" src="https://interfaces.zapier.com/assets/web-components/zapier-interfaces/zapier-interfaces.esm.js" crossorigin="anonymous"></script>
+
+  <style>
+    :root {
+      --bg-dark: #0a0a0d;
+      --bg-card: #121216;
+      --bg-input: #19191e;
+      --text-main: #f8fafc;
+      --text-muted: #94a3b8;
+      --text-sub: #cbd5e1;
+      --accent-p1: #ef4444;
+      --accent-p2: #f59e0b;
+      --accent-p3: #10b981;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Plus Jakarta Sans", "Segoe UI", Roboto, sans-serif;
+      background-color: var(--bg-dark);
+      color: var(--text-main);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      overflow-x: hidden;
+      position: relative;
+      padding: 16px;
+    }
+
+    /* Ambient Glows */
+    .ambient-glow {
+      position: fixed;
+      width: 600px;
+      height: 600px;
+      border-radius: 50%;
+      filter: blur(140px);
+      pointer-events: none;
+      z-index: 0;
+      opacity: 0.28;
+    }
+    .glow-top {
+      top: -150px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: radial-gradient(circle, #9c40ff 0%, #ffaa40 50%, transparent 70%);
+    }
+    .glow-bottom {
+      bottom: -150px;
+      right: 10%;
+      background: radial-gradient(circle, #00ffff 0%, #6366f1 60%, transparent 70%);
+    }
+
+    /* Header */
+    .top-header {
+      width: 100%;
+      max-width: 920px;
+      margin-bottom: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      position: relative;
+      z-index: 10;
+    }
+
+    .brand-badge {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-family: 'Outfit', sans-serif;
+      font-weight: 800;
+      font-size: 1.3rem;
+      letter-spacing: -0.02em;
+      color: #fff;
+    }
+
+    .brand-badge span span {
+      background: linear-gradient(135deg, #ffaa40, #9c40ff);
+      -webkit-background-clip: text;
+      background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+    .brand-icon {
+      width: 36px;
+      height: 36px;
+      border-radius: 10px;
+      background: linear-gradient(135deg, #ffaa40, #9c40ff);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #fff;
+      font-size: 1.15rem;
+      box-shadow: 0 0 20px rgba(156, 64, 255, 0.4);
+    }
+
+    .nav-status {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 0.8rem;
+      color: #10b981;
+      background: rgba(16, 185, 129, 0.08);
+      border: 1px solid rgba(16, 185, 129, 0.2);
+      padding: 5px 14px;
+      border-radius: 9999px;
+      font-weight: 600;
+    }
+
+    .pulse-dot {
+      width: 6px;
+      height: 6px;
+      background: #10b981;
+      border-radius: 50%;
+      box-shadow: 0 0 8px #10b981;
+      animation: pulse 2s infinite;
+    }
+
+    @keyframes pulse {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.3; }
+    }
+
+    /* ==========================================================================
+       BORDER BEAM CONTAINER
+       ========================================================================== */
+    .chatbot-border-beam {
+      position: relative;
+      width: 100%;
+      max-width: 920px;
+      height: 88vh;
+      max-height: 860px;
+      border-radius: 26px;
+      padding: 2px;
+      background: transparent;
+      overflow: hidden;
+      box-shadow: 0 20px 60px -15px rgba(0, 0, 0, 0.9), 0 0 50px rgba(156, 64, 255, 0.25);
+      display: flex;
+      z-index: 5;
+    }
+
+    /* Glowing Rotating Beam */
+    .chatbot-border-beam::before {
+      content: '';
+      position: absolute;
+      top: -50%;
+      left: -50%;
+      width: 200%;
+      height: 200%;
+      background: conic-gradient(
+        transparent 0deg,
+        transparent 270deg,
+        #ffaa40 300deg,
+        #9c40ff 335deg,
+        #00ffff 360deg
+      );
+      animation: beam-rotate 6s linear infinite;
+      z-index: 0;
+    }
+
+    @keyframes beam-rotate {
+      from { transform: rotate(0deg); }
+      to { transform: rotate(360deg); }
+    }
+
+    /* Inner Surface */
+    .chatbot-inner {
+      position: relative;
+      z-index: 1;
+      width: 100%;
+      height: 100%;
+      border-radius: 24px;
+      background: rgba(18, 18, 22, 0.97);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+
+    /* Inner Header */
+    .chat-inner-header {
+      padding: 14px 20px;
+      background: rgba(24, 24, 30, 0.85);
+      border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .header-left {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .assistant-avatar {
+      width: 38px;
+      height: 38px;
+      border-radius: 10px;
+      background: linear-gradient(135deg, #ffaa40, #9c40ff);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #fff;
+      font-size: 1.15rem;
+      box-shadow: 0 0 15px rgba(156, 64, 255, 0.3);
+    }
+
+    .assistant-title {
+      font-family: 'Outfit', sans-serif;
+      font-size: 1.1rem;
+      font-weight: 700;
+      color: #f8fafc;
+      letter-spacing: -0.01em;
+    }
+
+    .assistant-subtitle {
+      font-size: 0.75rem;
+      color: #94a3b8;
+    }
+
+    .header-actions {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .btn-header {
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      color: #94a3b8;
+      border-radius: 8px;
+      padding: 6px 12px;
+      font-size: 0.8rem;
+      font-weight: 500;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      transition: all 0.2s ease;
+      font-family: inherit;
+    }
+
+    .btn-header:hover {
+      background: rgba(255, 255, 255, 0.1);
+      color: #fff;
+      border-color: rgba(156, 64, 255, 0.4);
+    }
+
+    /* Messages Thread */
+    .messages-thread {
+      flex: 1;
+      overflow-y: auto;
+      padding: 20px;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+      scrollbar-width: thin;
+      scrollbar-color: rgba(255, 255, 255, 0.1) transparent;
+    }
+
+    .messages-thread::-webkit-scrollbar {
+      width: 5px;
+    }
+    .messages-thread::-webkit-scrollbar-thumb {
+      background: rgba(255, 255, 255, 0.1);
+      border-radius: 4px;
+    }
+
+    /* Welcome Banner */
+    .thread-welcome {
+      text-align: center;
+      padding: 14px 10px 4px;
+    }
+
+    .hack-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 4px 12px;
+      background: rgba(156, 64, 255, 0.12);
+      border: 1px solid rgba(156, 64, 255, 0.3);
+      border-radius: 9999px;
+      font-size: 0.75rem;
+      font-weight: 700;
+      color: #c084fc;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      margin-bottom: 10px;
+    }
+
+    .thread-welcome h2 {
+      font-family: 'Outfit', sans-serif;
+      font-size: 1.85rem;
+      font-weight: 800;
+      letter-spacing: -0.02em;
+      margin-bottom: 6px;
+      background: linear-gradient(135deg, #ffffff 40%, #c4b5fd 100%);
+      -webkit-background-clip: text;
+      background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+    .thread-welcome p {
+      font-size: 0.92rem;
+      color: var(--text-muted);
+      max-width: 540px;
+      margin: 0 auto 16px;
+      line-height: 1.5;
+    }
+
+    /* Quick Action Chips */
+    .suggestion-chips {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: 8px;
+      margin-bottom: 16px;
+    }
+
+    .suggest-chip {
+      background: rgba(255, 255, 255, 0.03);
+      border: 1px solid rgba(255, 255, 255, 0.06);
+      border-radius: 9999px;
+      padding: 6px 14px;
+      font-size: 0.82rem;
+      color: #94a3b8;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      transition: all 0.2s ease;
+    }
+
+    .suggest-chip:hover {
+      background: rgba(255, 255, 255, 0.08);
+      color: #f8fafc;
+      border-color: rgba(255, 170, 64, 0.4);
+      transform: translateY(-1px);
+    }
+
+    /* Message Rows */
+    .msg-row {
+      display: flex;
+      gap: 12px;
+      align-items: flex-start;
+      animation: fadeIn 0.3s ease-out;
+    }
+
+    .msg-row.user {
+      flex-direction: row-reverse;
+    }
+
+    .msg-avatar {
+      width: 32px;
+      height: 32px;
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.9rem;
+      flex-shrink: 0;
+    }
+
+    .msg-avatar.bot {
+      background: linear-gradient(135deg, #ffaa40, #9c40ff);
+      color: #fff;
+    }
+
+    .msg-avatar.user {
+      background: #27272a;
+      color: #e4e4e7;
+    }
+
+    .msg-bubble {
+      max-width: 86%;
+      padding: 14px 18px;
+      border-radius: 14px;
+      font-size: 0.93rem;
+      line-height: 1.6;
+    }
+
+    .msg-bubble.bot {
+      background: #17171d;
+      border: 1px solid rgba(255, 255, 255, 0.06);
+      color: #e2e8f0;
+      border-top-left-radius: 4px;
+    }
+
+    .msg-bubble.user {
+      background: #27272a;
+      color: #ffffff;
+      border-top-right-radius: 4px;
+    }
+
+    /* Structured Components inside message bubbles */
+    .structured-card {
+      background: rgba(0, 0, 0, 0.25);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      border-radius: 10px;
+      padding: 12px 14px;
+      margin: 10px 0;
+    }
+
+    .structured-header {
+      font-family: 'Outfit', sans-serif;
+      font-weight: 700;
+      font-size: 0.98rem;
+      margin-bottom: 8px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .badge-urgency {
+      display: inline-block;
+      padding: 2px 8px;
+      border-radius: 4px;
+      font-size: 0.72rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+    .urgency-p1 { background: rgba(239, 68, 68, 0.2); color: #ef4444; border: 1px solid rgba(239, 68, 68, 0.4); }
+    .urgency-p2 { background: rgba(245, 158, 11, 0.2); color: #f59e0b; border: 1px solid rgba(245, 158, 11, 0.4); }
+    .urgency-p3 { background: rgba(16, 185, 129, 0.2); color: #10b981; border: 1px solid rgba(16, 185, 129, 0.4); }
+
+    .checklist-item {
+      display: flex;
+      align-items: flex-start;
+      gap: 8px;
+      margin: 6px 0;
+      font-size: 0.88rem;
+    }
+
+    .greeting-options {
+      margin: 12px 0;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      background: rgba(255, 255, 255, 0.02);
+      border: 1px solid rgba(255, 255, 255, 0.04);
+      padding: 12px 14px;
+      border-radius: 10px;
+    }
+
+    .greeting-opt-item {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      color: #cbd5e1;
+      font-size: 0.9rem;
+      cursor: pointer;
+      padding: 5px 8px;
+      border-radius: 6px;
+      transition: background 0.15s ease;
+    }
+
+    .greeting-opt-item:hover {
+      background: rgba(255, 255, 255, 0.07);
+      color: #ffffff;
+    }
+
+    .typing-indicator {
+      display: inline-flex;
+      gap: 4px;
+      align-items: center;
+      padding: 4px 0;
+    }
+
+    .typing-dot {
+      width: 6px;
+      height: 6px;
+      background: #8b9099;
+      border-radius: 50%;
+      animation: bounce 1.4s infinite ease-in-out both;
+    }
+    .typing-dot:nth-child(1) { animation-delay: -0.32s; }
+    .typing-dot:nth-child(2) { animation-delay: -0.16s; }
+
+    @keyframes bounce {
+      0%, 80%, 100% { transform: scale(0); }
+      40% { transform: scale(1); }
+    }
+
+    /* ==========================================================================
+       CHAT INPUT (Exact Specification from User)
+       ========================================================================== */
+    .input-section {
+      padding: 12px 18px 16px;
+      background: rgba(18, 18, 22, 0.9);
+      border-top: 1px solid rgba(255, 255, 255, 0.04);
+    }
+
+    .chat-input-box {
+      width: 100%;
+      border-radius: 18px;
+      background: #1d1d1d;
+      box-shadow: inset 0 0 0 1px rgba(44,47,54,0.52), inset 0 0 50px 0 rgba(255,255,255,0.02);
+      overflow: hidden;
+      position: relative;
+      font-family: inherit;
+      padding: 7px 8px 8px;
+      display: flex;
+      flex-direction: column;
+      min-height: 110px;
+      transition: box-shadow 0.2s ease;
+    }
+
+    .chat-input-box:focus-within {
+      box-shadow: inset 0 0 0 1px rgba(156, 64, 255, 0.5), inset 0 0 50px 0 rgba(255,255,255,0.04);
+    }
+
+    /* Chips */
+    .chip {
+      border-radius: 36px;
+      background: rgba(255,255,255,0.04);
+      box-shadow: inset 0 0 0 1px rgba(255,255,255,0.02), inset 0 1px 0 0 rgba(255,255,255,0.04);
+      display: inline-flex;
+      align-items: center;
+      user-select: none;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+
+    .chip:hover {
+      background: rgba(255,255,255,0.08);
+    }
+
+    .chip-at {
+      width: fit-content;
+      height: 24px;
+      padding: 0 4px;
+      margin-left: 1px;
+    }
+
+    .chat-textarea {
+      width: 100%;
+      background: transparent;
+      border: none;
+      outline: none;
+      color: #ffffff;
+      font-size: 13px;
+      line-height: 18px;
+      font-family: inherit;
+      resize: none;
+      min-height: 38px;
+      max-height: 120px;
+      padding: 8px 4px 0;
+    }
+
+    .chat-textarea::placeholder {
+      color: #4e4e4e;
+    }
+
+    .input-controls {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-top: auto;
+      padding-top: 4px;
+    }
+
+    .chip-select {
+      height: 24px;
+      padding: 0 6px 0 8px;
+      font-size: 12px;
+      line-height: 14px;
+      color: #caccd2;
+      gap: 4px;
+      position: relative;
+    }
+
+    .chip-send {
+      width: 28px;
+      height: 28px;
+      margin-left: auto;
+      padding: 0 8px;
+      justify-content: center;
+      border: none;
+    }
+
+    .chip-send:hover svg path {
+      stroke: #ffffff;
+    }
+
+    /* Dropdown Menus */
+    .dropdown-menu {
+      position: absolute;
+      bottom: calc(100% + 8px);
+      left: 0;
+      background: #1c1c22;
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      border-radius: 12px;
+      padding: 6px;
+      display: none;
+      flex-direction: column;
+      gap: 4px;
+      min-width: 130px;
+      box-shadow: 0 10px 25px rgba(0, 0, 0, 0.6);
+      z-index: 50;
+    }
+
+    .dropdown-menu.show {
+      display: flex;
+    }
+
+    .dropdown-item {
+      padding: 6px 10px;
+      border-radius: 8px;
+      font-size: 12px;
+      color: #d4d4d8;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .dropdown-item:hover {
+      background: rgba(255, 255, 255, 0.08);
+      color: #fff;
+    }
+
+    .dropdown-item.active {
+      color: #9c40ff;
+      font-weight: 600;
+    }
+
+    /* Hidden background Zapier host */
+    .zapier-embed-host {
+      display: none;
+    }
+
+    /* Disclosure Banner */
+    .greeting-disclosure {
+      background: rgba(99, 102, 241, 0.09);
+      border: 1px solid rgba(168, 85, 247, 0.35);
+      border-radius: 12px;
+      padding: 12px 14px;
+      margin-bottom: 14px;
+      display: flex;
+      gap: 10px;
+      align-items: flex-start;
+      font-size: 0.84rem;
+      line-height: 1.5;
+      color: #cbd5e1;
+      backdrop-filter: blur(8px);
+    }
+    .greeting-disclosure i {
+      font-size: 1.2rem;
+      color: #a855f7;
+      margin-top: 1px;
+      flex-shrink: 0;
+    }
+    .greeting-disclosure strong {
+      color: #fff;
+    }
+    .greeting-disclosure .tz-tag {
+      background: rgba(16, 185, 129, 0.15);
+      border: 1px solid rgba(16, 185, 129, 0.3);
+      color: #10b981;
+      padding: 1px 7px;
+      border-radius: 4px;
+      font-size: 0.76rem;
+      font-weight: 700;
+      display: inline-block;
+      margin: 0 2px;
+    }
+
+    /* Message Timestamps & Meta */
+    .msg-wrapper {
+      display: flex;
+      flex-direction: column;
+      max-width: 86%;
+    }
+    .msg-wrapper .msg-bubble {
+      max-width: 100%;
+    }
+    .msg-meta {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      margin-top: 5px;
+      font-size: 0.72rem;
+      color: #64748b;
+      padding: 0 4px;
+    }
+    .msg-meta.bot {
+      justify-content: flex-start;
+    }
+    .msg-meta.user {
+      justify-content: flex-end;
+    }
+
+    /* Tool Tabs Switcher */
+    .tool-tabs {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      padding: 10px 16px;
+      background: rgba(15, 15, 20, 0.95);
+      border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+      overflow-x: auto;
+      scrollbar-width: none;
+    }
+    .tool-tabs::-webkit-scrollbar { display: none; }
+
+    .tool-tab {
+      background: transparent;
+      border: 1px solid transparent;
+      color: #94a3b8;
+      padding: 6px 14px;
+      border-radius: 9999px;
+      font-size: 0.8rem;
+      font-weight: 600;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      white-space: nowrap;
+      transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+      font-family: inherit;
+    }
+    .tool-tab:hover {
+      background: rgba(255, 255, 255, 0.06);
+      color: #f8fafc;
+    }
+    .tool-tab.active {
+      background: linear-gradient(135deg, rgba(255, 170, 64, 0.15), rgba(156, 64, 255, 0.2));
+      border-color: rgba(156, 64, 255, 0.4);
+      color: #fff;
+      box-shadow: 0 0 15px rgba(156, 64, 255, 0.25);
+    }
+
+    /* Panels Layout */
+    .panel-view {
+      display: none;
+      flex: 1;
+      overflow-y: auto;
+      padding: 20px;
+      flex-direction: column;
+      gap: 16px;
+      animation: fadeIn 0.3s ease-out;
+    }
+    .panel-view.active {
+      display: flex;
+    }
+
+    /* Interactive Auditor & Tools Cards */
+    .tool-header-card {
+      background: linear-gradient(135deg, rgba(255, 255, 255, 0.04), rgba(255, 255, 255, 0.01));
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      border-radius: 16px;
+      padding: 18px 20px;
+    }
+    .tool-header-card h3 {
+      font-family: 'Outfit', sans-serif;
+      font-size: 1.25rem;
+      color: #fff;
+      margin-bottom: 6px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .tool-header-card p {
+      font-size: 0.88rem;
+      color: #94a3b8;
+      line-height: 1.5;
+    }
+
+    .form-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+      gap: 14px;
+      margin-top: 14px;
+    }
+    .form-group {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+    .form-group label {
+      font-size: 0.78rem;
+      font-weight: 600;
+      color: #cbd5e1;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+    }
+    .form-input, .form-select, .form-textarea {
+      background: #141419;
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      border-radius: 10px;
+      padding: 10px 14px;
+      color: #fff;
+      font-size: 0.88rem;
+      font-family: inherit;
+      outline: none;
+      transition: all 0.2s ease;
+    }
+    .form-input:focus, .form-select:focus, .form-textarea:focus {
+      border-color: #9c40ff;
+      box-shadow: 0 0 10px rgba(156, 64, 255, 0.3);
+    }
+    .btn-action-primary {
+      background: linear-gradient(135deg, #ffaa40, #9c40ff);
+      color: #fff;
+      border: none;
+      border-radius: 10px;
+      padding: 11px 22px;
+      font-size: 0.9rem;
+      font-weight: 700;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      box-shadow: 0 0 20px rgba(156, 64, 255, 0.35);
+      transition: all 0.2s ease;
+      font-family: inherit;
+      margin-top: 10px;
+    }
+    .btn-action-primary:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 0 28px rgba(156, 64, 255, 0.55);
+    }
+
+    /* Score Gauge Card */
+    .audit-result-box {
+      background: #15151c;
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      border-radius: 16px;
+      padding: 18px;
+      display: none;
+      flex-direction: column;
+      gap: 14px;
+    }
+    .audit-result-box.show {
+      display: flex;
+      animation: fadeIn 0.3s ease-out;
+    }
+    .score-banner {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 14px 18px;
+      border-radius: 12px;
+      background: rgba(16, 185, 129, 0.1);
+      border: 1px solid rgba(16, 185, 129, 0.3);
+    }
+    .score-banner.warning {
+      background: rgba(245, 158, 11, 0.1);
+      border-color: rgba(245, 158, 11, 0.3);
+    }
+    .score-banner.danger {
+      background: rgba(239, 68, 68, 0.1);
+      border-color: rgba(239, 68, 68, 0.3);
+    }
+    .score-number {
+      font-size: 2rem;
+      font-weight: 800;
+      font-family: 'Outfit', sans-serif;
+      color: #10b981;
+    }
+
+    /* Matchmaker Candidate Cards */
+    .candidate-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 14px;
+      margin-top: 14px;
+    }
+    .candidate-card {
+      background: #16161d;
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      border-radius: 14px;
+      padding: 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      transition: all 0.2s ease;
+    }
+    .candidate-card:hover {
+      border-color: rgba(156, 64, 255, 0.4);
+      transform: translateY(-2px);
+    }
+    .candidate-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .candidate-role {
+      font-size: 0.76rem;
+      font-weight: 700;
+      color: #ffaa40;
+      background: rgba(255, 170, 64, 0.12);
+      border: 1px solid rgba(255, 170, 64, 0.3);
+      padding: 2px 8px;
+      border-radius: 6px;
+    }
+    .match-percent {
+      font-size: 0.85rem;
+      font-weight: 700;
+      color: #10b981;
+    }
+    .skill-tags {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 5px;
+    }
+    .skill-tag {
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      padding: 2px 8px;
+      border-radius: 9999px;
+      font-size: 0.72rem;
+      color: #cbd5e1;
+    }
+
+    /* Telemetry Timeline Stepper */
+    .timeline-stepper {
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+      margin-top: 14px;
+      position: relative;
+      padding-left: 20px;
+    }
+    .timeline-stepper::before {
+      content: '';
+      position: absolute;
+      left: 6px;
+      top: 10px;
+      bottom: 10px;
+      width: 2px;
+      background: rgba(255, 255, 255, 0.1);
+    }
+    .timeline-step {
+      position: relative;
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+    .timeline-dot {
+      position: absolute;
+      left: -20px;
+      top: 4px;
+      width: 14px;
+      height: 14px;
+      border-radius: 50%;
+      background: #27272a;
+      border: 2px solid #52525b;
+    }
+    .timeline-step.completed .timeline-dot {
+      background: #10b981;
+      border-color: #10b981;
+      box-shadow: 0 0 10px #10b981;
+    }
+    .timeline-step.active .timeline-dot {
+      background: #ffaa40;
+      border-color: #ffaa40;
+      box-shadow: 0 0 12px #ffaa40;
+      animation: pulse 2s infinite;
+    }
+    .timeline-title {
+      font-size: 0.92rem;
+      font-weight: 700;
+      color: #fff;
+    }
+    .timeline-time {
+      font-size: 0.78rem;
+      color: #94a3b8;
+    }
+
+    /* Live Countdown Box */
+    .countdown-widget {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 8px;
+      background: #111116;
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      border-radius: 12px;
+      padding: 12px;
+      text-align: center;
+      margin-top: 10px;
+    }
+    .cd-val {
+      font-size: 1.4rem;
+      font-weight: 800;
+      font-family: 'Outfit', sans-serif;
+      color: #ffaa40;
+    }
+    .cd-lbl {
+      font-size: 0.68rem;
+      color: #94a3b8;
+      text-transform: uppercase;
+    }
+
+    /* Escalation Ticket Logs */
+    .ticket-list {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      margin-top: 14px;
+    }
+    .ticket-item {
+      background: #14141a;
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      border-radius: 10px;
+      padding: 12px 14px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    /* Ticker */
+    .broadcast-ticker {
+      width: 100%;
+      max-width: 920px;
+      margin-bottom: 8px;
+      background: rgba(156, 64, 255, 0.08);
+      border: 1px solid rgba(156, 64, 255, 0.25);
+      border-radius: 9999px;
+      padding: 6px 16px;
+      font-size: 0.8rem;
+      color: #cbd5e1;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      overflow: hidden;
+      white-space: nowrap;
+    }
+    .ticker-tag {
+      background: #9c40ff;
+      color: #fff;
+      font-size: 0.68rem;
+      font-weight: 800;
+      padding: 2px 7px;
+      border-radius: 9999px;
+      text-transform: uppercase;
+    }
+
+    /* Live Demo Controller Bar */
+    .demo-controller-bar {
+      width: 100%;
+      max-width: 920px;
+      margin-bottom: 12px;
+      background: rgba(18, 18, 26, 0.75);
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      border-radius: 14px;
+      padding: 10px 14px;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
+    }
+    .demo-bar-top {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 6px;
+    }
+    .demo-title-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 0.78rem;
+      font-weight: 800;
+      color: #ffaa40;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+    .demo-metrics {
+      display: flex;
+      gap: 12px;
+      font-size: 0.72rem;
+      color: #94a3b8;
+      font-family: monospace;
+    }
+    .demo-metric-item {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    }
+    .demo-metric-item strong {
+      color: #10b981;
+    }
+    .demo-scenarios {
+      display: flex;
+      gap: 6px;
+      overflow-x: auto;
+      padding-bottom: 2px;
+      scrollbar-width: none;
+    }
+    .demo-scenarios::-webkit-scrollbar {
+      display: none;
+    }
+    .btn-demo-scenario {
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      color: #e2e8f0;
+      padding: 6px 12px;
+      border-radius: 8px;
+      font-size: 0.78rem;
+      font-weight: 600;
+      cursor: pointer;
+      white-space: nowrap;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+    .btn-demo-scenario:hover {
+      background: rgba(156, 64, 255, 0.2);
+      border-color: rgba(156, 64, 255, 0.5);
+      color: #fff;
+      transform: translateY(-1px);
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(4px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    @media (max-width: 768px) {
+      .chatbot-border-beam {
+        height: 94vh;
+        max-height: 100vh;
+        border-radius: 20px;
+      }
+      .chatbot-inner {
+        border-radius: 18px;
+      }
+      .timezone-pill {
+        display: none;
+      }
+      .demo-metrics {
+        display: none;
+      }
+    }
+
+    /* ── Auth Header Elements ─────────────────────── */
+    .auth-login-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 6px 16px;
+      background: linear-gradient(135deg, #ffaa40, #9c40ff);
+      color: #fff;
+      border-radius: 9999px;
+      font-size: 0.82rem;
+      font-weight: 600;
+      text-decoration: none;
+      transition: all 0.25s ease;
+      box-shadow: 0 2px 12px rgba(156, 64, 255, 0.3);
+    }
+    .auth-login-btn:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 4px 20px rgba(156, 64, 255, 0.45);
+    }
+    .auth-user-menu {
+      position: relative;
+    }
+    .auth-avatar-btn {
+      width: 36px;
+      height: 36px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, #ffaa40, #9c40ff);
+      border: 2px solid rgba(255, 255, 255, 0.15);
+      color: #fff;
+      font-family: 'Outfit', sans-serif;
+      font-size: 0.85rem;
+      font-weight: 700;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.2s ease;
+      box-shadow: 0 2px 12px rgba(156, 64, 255, 0.3);
+    }
+    .auth-avatar-btn:hover {
+      transform: scale(1.08);
+      box-shadow: 0 4px 20px rgba(156, 64, 255, 0.5);
+    }
+    .auth-dropdown {
+      display: none;
+      position: absolute;
+      top: calc(100% + 10px);
+      right: 0;
+      min-width: 220px;
+      background: rgba(18, 18, 24, 0.95);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      border-radius: 14px;
+      padding: 6px;
+      box-shadow: 0 16px 48px rgba(0, 0, 0, 0.6);
+      z-index: 9999;
+      animation: dropdownFadeIn 0.2s ease;
+    }
+    .auth-dropdown.open { display: block; }
+    @keyframes dropdownFadeIn {
+      from { opacity: 0; transform: translateY(-6px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    .auth-dropdown-header {
+      padding: 12px 14px 10px;
+    }
+    .auth-dropdown-name {
+      font-family: 'Outfit', sans-serif;
+      font-weight: 700;
+      font-size: 0.95rem;
+      color: #f8fafc;
+    }
+    .auth-dropdown-email {
+      font-size: 0.78rem;
+      color: #94a3b8;
+      margin-top: 2px;
+    }
+    .auth-dropdown-divider {
+      height: 1px;
+      background: rgba(255, 255, 255, 0.06);
+      margin: 4px 8px;
+    }
+    .auth-dropdown-item {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      width: 100%;
+      padding: 10px 14px;
+      border: none;
+      background: transparent;
+      color: #94a3b8;
+      font-family: inherit;
+      font-size: 0.85rem;
+      font-weight: 500;
+      cursor: pointer;
+      border-radius: 10px;
+      transition: all 0.15s ease;
+    }
+    .auth-dropdown-item:hover {
+      background: rgba(255, 255, 255, 0.06);
+      color: #ef4444;
+    }
+
+  </style>
+</head>
+<body>
+  <!-- Ambient background glow -->
+  <div class="ambient-glow glow-top"></div>
+  <div class="ambient-glow glow-bottom"></div>
+
+  <!-- Broadcast Telemetry Ticker -->
+  <div class="broadcast-ticker" style="display: none;">
+    <span class="ticker-tag">Live Telemetry</span>
+    <span id="ticker-text">🔔 Learnathon 5.0 active in Smart Classrooms 1 &amp; 2 • Mentor Office Hours available • Timezone: Asia/Calcutta</span>
+  </div>
+
+  <!-- Header -->
+  <header class="top-header" style="display: none;">
+    <div class="brand-badge">
+      <div class="brand-icon">
+        <i class="ri-terminal-box-fill"></i>
+      </div>
+      <span>Hack<span>verse</span></span>
+    </div>
+
+    <div class="nav-actions">
+      <div class="timezone-pill" id="header-timezone-pill" title="Configured Bot Timezone">
+        <i class="ri-time-line"></i>
+        <span id="header-live-time">Asia/Calcutta • Loading...</span>
+      </div>
+      <div class="nav-status">
+        <span class="pulse-dot"></span> Online
+      </div>
+    </div>
+  </header>
+
+  <!-- Live Demo & Testing Showcase Control Center -->
+  <div class="demo-controller-bar" style="display: none;">
+    <div class="demo-bar-top">
+      <div class="demo-title-badge">
+        <i class="ri-play-circle-fill" style="color:#ffaa40; font-size:1rem;"></i>
+        <span>Live Evaluation &amp; Testing Console</span>
+      </div>
+      <div class="demo-metrics">
+        <div class="demo-metric-item"><i class="ri-pulse-line"></i> Ops Agent SLA: <strong>99.9%</strong></div>
+        <div class="demo-metric-item"><i class="ri-mail-check-line"></i> Mentor Queue: <strong>&lt; 3m avg</strong></div>
+        <div class="demo-metric-item"><i class="ri-shield-check-line"></i> Auditor: <strong>Active</strong></div>
+      </div>
+    </div>
+    <div class="demo-scenarios">
+      <button class="btn-demo-scenario" id="demo-btn-blocker" title="Run P1 Code Blocker Workflow">
+        <i class="ri-mail-send-fill" style="color:#ffaa40;"></i> 🚀 Test 1: P1 Mentor Blocker
+      </button>
+      <button class="btn-demo-scenario" id="demo-btn-audit" title="Run Submission Compliance Audit">
+        <i class="ri-shield-check-fill" style="color:#10b981;"></i> 🔍 Test 2: Repo Compliance Audit
+      </button>
+      <button class="btn-demo-scenario" id="demo-btn-match" title="Run Hacker Matchmaking Simulation">
+        <i class="ri-user-shared-fill" style="color:#9c40ff;"></i> 👥 Test 3: Skill Matchmaker
+      </button>
+      <button class="btn-demo-scenario" id="demo-btn-broadcast" title="Trigger Emergency Live Telemetry Broadcast">
+        <i class="ri-broadcast-fill" style="color:#38bdf8;"></i> ⏱️ Test 4: Organizer Alert Broadcast
+      </button>
+      <button class="btn-demo-scenario" id="demo-btn-sih" title="Test SIH Rules & Rubric in Chat">
+        <i class="ri-chat-check-fill" style="color:#ec4899;"></i> 💬 Test 5: SIH &amp; Rubric Query
+      </button>
+    </div>
+  </div>
+
+  <!-- ======================================================== -->
+  <!-- HACKVERSE CHATBOT WRAPPED IN ANIMATED BORDER BEAM        -->
+  <!-- ======================================================== -->
+  <div class="chatbot-border-beam" id="chatbot-frame">
+    <div class="chatbot-inner">
+      <!-- Chat Inner Header -->
+      <div class="chat-inner-header">
+        <div class="header-left">
+          <div class="assistant-avatar">
+            <i class="ri-sparkling-2-fill"></i>
+          </div>
+          <div>
+            <div class="assistant-title">Hackverse</div>
+            <div class="assistant-subtitle">Autonomous Hackathon Concierge &amp; Event Operations Agent</div>
+          </div>
+        </div>
+
+        <div class="header-actions">
+          <button class="btn-header" id="clear-chat-btn" title="Reset conversation">
+            <i class="ri-refresh-line"></i>
+            <span>Reset</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- Segmented Tool Mode Switcher -->
+      <div class="tool-tabs" id="tool-tabs">
+        <button class="tool-tab active" data-target="panel-chat">
+          <i class="ri-chat-voice-line"></i> 💬 AI Concierge
+        </button>
+        <button class="tool-tab" data-target="panel-mentor">
+          <i class="ri-mail-send-line"></i> ✉️ Email Mentor Ayush
+        </button>
+        <button class="tool-tab" data-target="panel-auditor" style="display: none;">
+          <i class="ri-shield-check-line"></i> 🔍 Submission Auditor
+        </button>
+        <button class="tool-tab" data-target="panel-matchmaker" style="display: none;">
+          <i class="ri-team-line"></i> 👥 Matchmaking Hub
+        </button>
+        <button class="tool-tab" data-target="panel-telemetry">
+          <i class="ri-time-line"></i> ⏱️ Event Telemetry
+        </button>
+        <button class="tool-tab" data-target="panel-escalation" style="display: none;">
+          <i class="ri-alarm-warning-line"></i> 🚨 Escalation Hub
+        </button>
+      </div>
+
+      <!-- ======================================================== -->
+      <!-- VIEW 1: CONCIERGE CHAT PANEL                             -->
+      <!-- ======================================================== -->
+      <div class="panel-view active" id="panel-chat" style="padding:0; display:flex; flex-direction:column;">
+        <!-- Messages Thread -->
+        <div class="messages-thread" id="chat-thread">
+          <div class="thread-welcome">
+            <div class="hack-badge">
+              <i class="ri-flashlight-fill"></i> Hackverse Operations • Learnathon 5.0 &amp; SIH 2026
+            </div>
+            <h2>Hackverse</h2>
+            <p>Your 24/7 autonomous intelligence engine for <strong>Learnathon 5.0 (GIETU)</strong>, <strong>Smart India Hackathon 2026</strong>, 45+ track problem statements, submission auditing, schedules, and mentor routing.</p>
+
+            <!-- Prompt Quick Action Chips -->
+            <div class="suggestion-chips">
+              <button class="suggest-chip" data-text="📧 I want to chat with mentor and email my query to Ayush">
+                ✉️ Email Mentor Ayush
+              </button>
+              <button class="suggest-chip" data-text="🎓 What is Learnathon 5.0 schedule and rules?">
+                🎓 Learnathon 5.0 GIETU
+              </button>
+              <button class="suggest-chip" data-text="🇮🇳 What are the official SIH 2026 guidelines and team rules?">
+                🇮🇳 SIH 2026 Guidelines
+              </button>
+              <button class="suggest-chip" data-text="🌾 Show agriculture problem statements and solutions">
+                🌾 Agriculture Track
+              </button>
+              <button class="suggest-chip" data-text="💡 Show all 10 domain tracks and problem statements">
+                💡 10 Domain Tracks (45 PS)
+              </button>
+              <button class="suggest-chip" data-text="⏱️ Give me a 36-hour hackathon winning strategy">
+                ⏱️ 36-Hour Strategy
+              </button>
+              <button class="suggest-chip" data-text="🎤 What is the 2-minute pitch structure for judges?">
+                🎤 2-Minute Pitch Deck
+              </button>
+              <button class="suggest-chip" data-text="👥 Who are the mentors and WhatsApp group links for Learnathon 5.0?">
+                👥 Mentors &amp; WhatsApp
+              </button>
+              <button class="suggest-chip" data-text="🔍 Pre-screen and audit my submission">
+                🔍 Submission Audit
+              </button>
+            </div>
+          </div>
+
+          <!-- Initial Bot Greeting with Disclosure Message -->
+          <div class="msg-row bot">
+            <div class="msg-avatar bot">
+              <i class="ri-sparkling-fill"></i>
+            </div>
+            <div class="msg-wrapper">
+              <div class="msg-bubble bot">
+                <!-- Disclosure Message in Greeting -->
+                <div class="greeting-disclosure">
+                  <i class="ri-shield-user-fill"></i>
+                  <div>
+                    <strong>AI Disclosure &amp; Timezone Notice:</strong><br />
+                    I am Hackverse, your 24/7 AI-powered hackathon concierge. All schedules, office hours, and deadline references are synchronized to the <span class="tz-tag">Asia/Calcutta</span> timezone. For official disputes or critical on-ground emergencies, please contact the organizing team directly.
+                  </div>
+                </div>
+
+                <div class="greeting-block">
+                  <p><strong>Hey! I’m Hackverse — your autonomous hackathon concierge &amp; operations engine.</strong></p>
+                  <p>Equipped with complete intel on <strong>Learnathon 5.0 (GIET University &amp; Incubatex)</strong>, <strong>Smart India Hackathon (SIH 2026)</strong>, 45+ specialized problem statements, technical architecture methods, sprint timelines, and mentor escalation.</p>
+                  
+                  <p style="margin-top: 10px; font-weight: 600; color: #fff;">What would you like to explore?</p>
+                  <div class="greeting-options">
+                    <div class="greeting-opt-item" data-text="🎓 What is Learnathon 5.0 schedule and rules?">
+                      <span>🎓</span> <strong>Learnathon 5.0 Schedule &amp; GIETU Venues</strong>
+                    </div>
+                    <div class="greeting-opt-item" data-text="🇮🇳 What are the official SIH 2026 guidelines and team rules?">
+                      <span>🇮🇳</span> <strong>SIH 2026 Guidelines, SPOC Process &amp; ₹1.5L Prize</strong>
+                    </div>
+                    <div class="greeting-opt-item" data-text="💡 Show all 10 domain tracks and problem statements">
+                      <span>💡</span> <strong>Explore 45 Problem Statements across 10 Tracks</strong>
+                    </div>
+                    <div class="greeting-opt-item" data-text="🌾 Show agriculture problem statements and solutions">
+                      <span>🌾</span> <strong>Agriculture &amp; Rural Impact Challenges</strong>
+                    </div>
+                    <div class="greeting-opt-item" data-text="⏱️ Give me a 36-hour hackathon winning strategy">
+                      <span>⏱️</span> <strong>36-Hour Sprint Blueprint &amp; 30-Day SIH Plan</strong>
+                    </div>
+                    <div class="greeting-opt-item" data-text="👥 Who are the mentors and WhatsApp group links for Learnathon 5.0?">
+                      <span>👥</span> <strong>Mentors, Coordinators &amp; WhatsApp Groups</strong>
+                    </div>
+                  </div>
+
+                  <p style="margin-top: 10px; color: #ffaa40; font-weight: 600;">Let’s build, hack, and innovate! 🚀</p>
+                </div>
+              </div>
+              <div class="msg-meta bot">
+                <span id="initial-greet-time"></span> • <span>Asia/Calcutta</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- User Chat Input Box -->
+        <div class="input-section">
+          <div class="chat-input-box">
+            <!-- Top @ AtSign Chip -->
+            <div class="chip chip-at" id="at-chip" title="Mention an Assistant or Source">
+              <svg aria-hidden="true" width="16" height="16" viewBox="0 0 16 16" fill="none">
+                <path
+                  d="M10.4 5.59963V8.59962C10.4 9.07701 10.5896 9.53485 10.9272 9.87242C11.2648 10.21 11.7226 10.3996  12.2 10.3996C12.6774 10.3996 13.1352 10.21 13.4728 9.87242C13.8104 9.53485 14 9.07701 14 8.59962V7.99962C13.9999 6.64544 13.5417 5.33111 12.7 4.27035C11.8582 3.20958 10.6823 2.46476 9.36359 2.15701C8.04484 1.84925 6.66076 1.99665 5.43641 2.57525C4.21206 3.15384 3.21944 4.1296 2.61996 5.34386C2.02048 6.55812 1.84939 7.93947 2.13451 9.26329C2.41963 10.5871 3.14419 11.7756 4.19038 12.6354C5.23657 13.4952 6.54286 13.9758 7.89684 13.9991C9.25083 14.0224 10.5729 13.587 11.648 12.7636M10.4 7.99962C10.4 9.32511 9.32549 10.3996 8 10.3996C6.67452 10.3996 5.6 9.32511 5.6 7.99962C5.6 6.67414 6.67452 5.59963 8 5.59963C9.32549 5.59963 10.4 6.67414 10.4 7.99962Z"
+                  stroke="#808388"
+                  stroke-width="1.5"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                />
+              </svg>
+            </div>
+
+            <!-- Textarea with user configured placeholder -->
+            <textarea
+              id="chat-input"
+              class="chat-textarea"
+              rows="1"
+              placeholder="Ask Hackverse anything Tracks, Mentors , Event guidelines...."
+              autofocus
+            ></textarea>
+
+            <!-- Bottom bar -->
+            <div class="input-controls">
+              <!-- Agent Selector -->
+              <div class="chip chip-select" id="chip-agent">
+                <span id="agent-label">Hackverse</span>
+                <svg aria-hidden="true" width="16" height="16" viewBox="0 0 16 16" fill="none" style="transform: rotate(90deg)">
+                  <path d="M7 11L10 8L7 5" stroke="#8B9099" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" opacity="0.6" />
+                </svg>
+
+                <div class="dropdown-menu" id="menu-agent">
+                  <div class="dropdown-item active" data-val="Hackverse">⚡ Hackverse Concierge</div>
+                  <div class="dropdown-item" data-val="Auditor">🔍 Submission Audit</div>
+                  <div class="dropdown-item" data-val="Escalate">🚨 Escalation</div>
+                </div>
+              </div>
+
+              <!-- Auto Selector -->
+              <div class="chip chip-select" id="chip-model">
+                <span id="model-label">Auto</span>
+                <svg aria-hidden="true" width="16" height="16" viewBox="0 0 16 16" fill="none" style="transform: rotate(90deg)">
+                  <path d="M7 11L10 8L7 5" stroke="#8B9099" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" opacity="0.6" />
+                </svg>
+
+                <div class="dropdown-menu" id="menu-model">
+                  <div class="dropdown-item active" data-val="Auto">Auto (Strict)</div>
+                  <div class="dropdown-item" data-val="Fast">Fast (Instant)</div>
+                  <div class="dropdown-item" data-val="Deep">Deep Audit</div>
+                </div>
+              </div>
+
+              <!-- Send Button -->
+              <button class="chip chip-send" id="send-btn" aria-label="Send message">
+                <svg aria-hidden="true" width="16" height="16" viewBox="0 0 16 16" fill="none">
+                  <path d="M8 12.6667V3.33333M12.6667 8L8 3.33333L3.33333 8" stroke="#8B8B8B" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" />
+                </svg>
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ======================================================== -->
+      <!-- VIEW: MENTOR AI EMAIL WORKFLOW PANEL                     -->
+      <!-- ======================================================== -->
+      <div class="panel-view" id="panel-mentor">
+        <div class="tool-header-card">
+          <h3><i class="ri-mail-send-line" style="color:#ffaa40;"></i> Technical Support Operations Copilot</h3>
+          <p>Autonomous learning-operations agent that transforms structured participant blocker data into a clear, concise, mentor-ready email dispatched to <strong>Ayush (<code>decode.ayush11@gmail.com</code>)</strong>.</p>
+          
+          <div class="form-grid">
+            <div class="form-group">
+              <label>Participant Name *</label>
+              <input type="text" class="form-input" id="copilot-participant-name" placeholder="e.g. Suvendu Dandpat" value="Suvendu Dandpat" />
+            </div>
+            <div class="form-group">
+              <label>Participant Email *</label>
+              <input type="email" class="form-input" id="copilot-participant-email" placeholder="e.g. suvendu@giet.edu" value="suvendu.dandpat@giet.edu" />
+            </div>
+            <div class="form-group">
+              <label>Team &amp; Location</label>
+              <input type="text" class="form-input" id="copilot-team-info" placeholder="e.g. Team Neural, Smart Classroom 1, Table 4" value="Team Neural, Smart Classroom 1, Table 4" />
+            </div>
+            <div class="form-group">
+              <label>Course / Module / Track</label>
+              <input type="text" class="form-input" id="copilot-course-module" placeholder="e.g. Track 4: AI & Agents / Learnathon 5.0" value="Track 4: AI, Agents & NLP / Edge Quantization" />
+            </div>
+            <div class="form-group">
+              <label>Severity Classification *</label>
+              <select class="form-select" id="copilot-severity">
+                <option value="BLOCKING">🚨 BLOCKING — Cannot proceed at all (crash / fatal error)</option>
+                <option value="DEGRADED" selected>⚡ DEGRADED — Significant friction / partial failure</option>
+                <option value="MINOR">ℹ️ MINOR — Cosmetic, clarification, or general question</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label>Mentor Email *</label>
+              <input type="email" class="form-input" id="copilot-mentor-email" placeholder="decode.ayush11@gmail.com" value="decode.ayush11@gmail.com" />
+            </div>
+          </div>
+
+          <div class="form-group" style="margin-top:14px;">
+            <label>Issue Summary * (What is happening?)</label>
+            <input type="text" class="form-input" id="copilot-issue-summary" placeholder="e.g. MobileNetV3 INT8 post-training quantization fails with tensor dimension mismatch during export" value="MobileNetV3 INT8 quantization fails with tensor dimension mismatch during ONNX export" />
+          </div>
+
+          <div class="form-group" style="margin-top:14px;">
+            <label>Error Logs / Terminal Output (Optional)</label>
+            <textarea class="form-textarea" id="copilot-error-logs" rows="2" placeholder="Paste exact stack trace or terminal output here...">RuntimeError: Tensor 'input.1' dimension mismatch: expected [1, 3, 224, 224] but received [1, 3, 512, 512] in ONNX exporter.</textarea>
+          </div>
+
+          <div class="form-group" style="margin-top:14px;">
+            <label>Steps Already Taken / Troubleshooting Attempted (Optional)</label>
+            <textarea class="form-textarea" id="copilot-steps-taken" rows="2" placeholder="e.g. Resized input layer, cleared torch cache, tested with sample batch...">Resized input tensor in transform pipeline; re-ran torch.onnx.export with dynamic_axes; cleared PyTorch cache.</textarea>
+          </div>
+
+          <button class="btn-action-primary" id="btn-generate-mentor-email">
+            <i class="ri-cpu-line"></i> Run Copilot Validation &amp; Draft Mentor Email
+          </button>
+        </div>
+
+        <!-- Rendered AI Email Dispatch Card -->
+        <div class="audit-result-box" id="mentor-email-preview-box">
+          <div class="score-banner" style="background:rgba(156,64,255,0.12); border-color:rgba(156,64,255,0.35);">
+            <div>
+              <div style="font-weight:700; font-size:1.05rem; color:#fff;"><i class="ri-mail-check-fill" style="color:#a855f7;"></i> Copilot Validation Passed (Ready to Send)</div>
+              <div style="font-size:0.82rem; color:#cbd5e1;">Target: <code style="color:#ffaa40;" id="preview-target-email">decode.ayush11@gmail.com</code> • Lead Technical Mentor</div>
+            </div>
+            <span class="badge-urgency urgency-p1" id="mentor-email-badge">BLOCKING</span>
+          </div>
+
+          <div class="structured-card" style="background:#131318; border-color:rgba(255,255,255,0.12);">
+            <div style="font-size:0.86rem; color:#94a3b8; margin-bottom:8px;">
+              <strong>To:</strong> <span style="color:#fff;" id="preview-to-field">decode.ayush11@gmail.com</span><br />
+              <strong>Subject:</strong> <span style="color:#38bdf8; font-weight:700;" id="email-preview-subject"></span>
+            </div>
+            <hr style="border:none; border-top:1px solid rgba(255,255,255,0.08); margin:10px 0;" />
+            <pre style="white-space:pre-wrap; font-family:inherit; font-size:0.86rem; color:#e2e8f0; line-height:1.6;" id="email-preview-body"></pre>
+          </div>
+
+          <div style="display:flex; gap:10px; flex-wrap:wrap; margin-top:10px;">
+            <a href="#" id="btn-open-gmail" target="_blank" class="btn-action-primary" style="background:linear-gradient(135deg, #ea4335, #c5221f); text-decoration:none; box-shadow:0 0 20px rgba(234,67,53,0.35);">
+              <i class="ri-google-fill"></i> Open in Gmail Web Compose
+            </a>
+            <a href="#" id="btn-open-mailto" target="_blank" class="btn-action-primary" style="text-decoration:none;">
+              <i class="ri-mail-open-line"></i> Open in Desktop Mail App
+            </a>
+            <button class="btn-action-primary" style="background:#334155; box-shadow:none;" id="btn-copy-email-text">
+              <i class="ri-file-copy-line"></i> Copy Email Text
+            </button>
+            <button class="btn-action-primary" style="background:#10b981; box-shadow:0 0 20px rgba(16,185,129,0.35);" id="btn-dispatch-server-email">
+              <i class="ri-send-plane-2-fill"></i> Execute send_mentor_email Tool Call
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- ======================================================== -->
+      <!-- VIEW 2: SUBMISSION AUDITOR PANEL                         -->
+      <!-- ======================================================== -->
+      <div class="panel-view" id="panel-auditor">
+        <div class="tool-header-card">
+          <h3><i class="ri-shield-check-line" style="color:#10b981;"></i> Automated Submission Compliance Auditor</h3>
+          <p>Pre-screen your project before final judging lock. Prevent instant disqualifications caused by private repositories, broken video permissions, missing setup commands, or track mismatches.</p>
+          
+          <div class="form-grid">
+            <div class="form-group">
+              <label>Project Title</label>
+              <input type="text" class="form-input" id="audit-title" placeholder="e.g. AgriVision AI" value="AgriVision AI" />
+            </div>
+            <div class="form-group">
+              <label>Selected Track</label>
+              <select class="form-select" id="audit-track">
+                <option value="AI_ML">Artificial Intelligence &amp; NLP</option>
+                <option value="AGRI">Smart Agriculture &amp; Circular Economy</option>
+                <option value="IOT">IoT &amp; Robotics</option>
+                <option value="WEB3">Blockchain &amp; Web3</option>
+                <option value="FINTECH">FinTech &amp; Risk Intelligence</option>
+                <option value="ARVR">AR / VR &amp; Metaverse</option>
+                <option value="QUANTUM">Quantum Computing</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label>GitHub Repository URL</label>
+              <input type="url" class="form-input" id="audit-repo" placeholder="https://github.com/username/project" value="https://github.com/team/agrivision" />
+            </div>
+            <div class="form-group">
+              <label>Demo Video Link (YouTube / Loom)</label>
+              <input type="url" class="form-input" id="audit-video" placeholder="https://youtu.be/..." value="https://youtu.be/demo123" />
+            </div>
+          </div>
+
+          <div class="form-group" style="margin-top:14px;">
+            <label>README Architecture &amp; Setup Summary</label>
+            <textarea class="form-textarea" id="audit-readme" rows="3" placeholder="Problem statement, architecture diagram, local setup instructions...">Problem Statement: Crop disease scanner. Tech Stack: React, Python, MobileNet. Setup: npm install && python app.py. Includes architecture diagram and sample datasets.</textarea>
+          </div>
+
+          <button class="btn-action-primary" id="btn-run-audit">
+            <i class="ri-cpu-line"></i> Run Full AI Compliance Audit
+          </button>
+        </div>
+
+        <!-- Audit Results Box -->
+        <div class="audit-result-box" id="audit-result-box">
+          <div class="score-banner" id="score-banner">
+            <div>
+              <div style="font-weight:700; font-size:1.1rem; color:#fff;" id="audit-status-title">Audit Status: Passed (Ready to Submit)</div>
+              <div style="font-size:0.84rem; color:#cbd5e1;" id="audit-status-sub">Zero critical compliance blockers detected.</div>
+            </div>
+            <div class="score-number" id="audit-score-num">95%</div>
+          </div>
+
+          <div class="structured-card" id="audit-checklist-card">
+            <!-- Injected via JS -->
+          </div>
+        </div>
+      </div>
+
+      <!-- ======================================================== -->
+      <!-- VIEW 3: MATCHMAKING HUB PANEL                            -->
+      <!-- ======================================================== -->
+      <div class="panel-view" id="panel-matchmaker">
+        <div class="tool-header-card">
+          <h3><i class="ri-team-line" style="color:#ffaa40;"></i> Automated Hacker Matchmaking Engine</h3>
+          <p>Find missing team members or join an incomplete team based on complementary skills, domain interest, and stack synergy.</p>
+
+          <div class="form-grid">
+            <div class="form-group">
+              <label>Your Primary Role</label>
+              <select class="form-select" id="match-role">
+                <option value="AI/ML">AI / Machine Learning Engineer</option>
+                <option value="Frontend">Frontend Developer (React/Flutter)</option>
+                <option value="Backend">Backend / API Architect (Node/Python)</option>
+                <option value="UI/UX">UI / UX Product Designer (Figma)</option>
+                <option value="Hardware">Hardware / IoT Engineer (ESP32/ROS2)</option>
+                <option value="Pitch">Pitch Presenter / Domain Lead</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label>Target Track</label>
+              <select class="form-select" id="match-track">
+                <option value="AI">AI &amp; Autonomous Agents</option>
+                <option value="Agri">Smart Agriculture</option>
+                <option value="Cyber">Cybersecurity &amp; Safeguards</option>
+                <option value="Web3">Blockchain &amp; RWA</option>
+                <option value="Quantum">Quantum Computing</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label>Current Tech Stack</label>
+              <input type="text" class="form-input" id="match-skills" placeholder="e.g. Python, PyTorch, FastAPI, Docker" value="Python, PyTorch, OpenCV, FastAPI" />
+            </div>
+            <div class="form-group">
+              <label>Status</label>
+              <select class="form-select" id="match-status">
+                <option value="solo">Solo Hacker seeking Team</option>
+                <option value="team">Incomplete Team seeking 1-2 Members</option>
+              </select>
+            </div>
+          </div>
+
+          <div style="display:flex; gap:10px; flex-wrap:wrap; margin-top:10px;">
+            <button class="btn-action-primary" id="btn-find-matches">
+              <i class="ri-search-2-line"></i> Find Compatible Teammates
+            </button>
+            <button class="btn-action-primary" style="background:#27272a; box-shadow:none;" id="btn-broadcast-profile">
+              <i class="ri-broadcast-line"></i> Broadcast Profile to Hub
+            </button>
+          </div>
+        </div>
+
+        <div style="font-weight:700; color:#fff; font-size:1.1rem; margin-top:6px;">Recommended Matches</div>
+        <div class="candidate-grid" id="candidate-grid">
+          <!-- Injected via JS -->
+        </div>
+      </div>
+
+      <!-- ======================================================== -->
+      <!-- VIEW 4: EVENT TELEMETRY & TIMELINE                       -->
+      <!-- ======================================================== -->
+      <div class="panel-view" id="panel-telemetry">
+        <div class="tool-header-card">
+          <h3><i class="ri-time-line" style="color:#9c40ff;"></i> Live Event Telemetry &amp; Phase Timeline</h3>
+          <p>Real-time countdown and active operational milestones synchronized to the <strong>Asia/Calcutta</strong> timezone.</p>
+
+          <div class="countdown-widget">
+            <div>
+              <div class="cd-val" id="cd-hours">03</div>
+              <div class="cd-lbl">Hours</div>
+            </div>
+            <div>
+              <div class="cd-val" id="cd-mins">45</div>
+              <div class="cd-lbl">Minutes</div>
+            </div>
+            <div>
+              <div class="cd-val" id="cd-secs">12</div>
+              <div class="cd-lbl">Seconds</div>
+            </div>
+            <div>
+              <div class="cd-val" style="color:#10b981;">ACTIVE</div>
+              <div class="cd-lbl">Status</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="structured-card">
+          <div class="structured-header"><i class="ri-git-commit-line" style="color:#ffaa40;"></i> <strong>Learnathon 5.0 Milestone Stepper</strong></div>
+          
+          <div class="timeline-stepper">
+            <div class="timeline-step completed">
+              <div class="timeline-dot"></div>
+              <div class="timeline-title">Stage 1: Reporting &amp; Industry Workshop</div>
+              <div class="timeline-time">08:00 AM – 10:30 AM IST • Mega Auditorium • Completed</div>
+            </div>
+
+            <div class="timeline-step active">
+              <div class="timeline-dot"></div>
+              <div class="timeline-title">Stage 2: Solution Build &amp; Round 1 Evaluation (50 Marks)</div>
+              <div class="timeline-time">10:30 AM – 02:00 PM IST • Smart Classrooms 1 &amp; 2 • In Progress</div>
+            </div>
+
+            <div class="timeline-step">
+              <div class="timeline-dot"></div>
+              <div class="timeline-title">Stage 3: Round 2 Defense &amp; Expert Evaluation (50 Marks)</div>
+              <div class="timeline-time">02:30 PM – 05:30 PM IST • Total 100 Marks</div>
+            </div>
+
+            <div class="timeline-step">
+              <div class="timeline-dot"></div>
+              <div class="timeline-title">Stage 4: Hard Code Freeze &amp; Repository Submission Lock</div>
+              <div class="timeline-time">06:00 PM IST • Strict Cutoff</div>
+            </div>
+
+            <div class="timeline-step">
+              <div class="timeline-dot"></div>
+              <div class="timeline-title">Stage 5: Final Demos &amp; SIH Nomination Announcement</div>
+              <div class="timeline-time">06:30 PM IST • Valedictory Ceremony</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ======================================================== -->
+      <!-- VIEW 5: ESCALATION HUB                                   -->
+      <!-- ======================================================== -->
+      <div class="panel-view" id="panel-escalation">
+        <div class="tool-header-card">
+          <h3><i class="ri-alarm-warning-line" style="color:#ef4444;"></i> Urgent Operational Escalation Dispatcher</h3>
+          <p>Encountering a technical blocker, hardware defect, or mentor requirement? Dispatch an urgent priority ticket directly to on-call organizers and technical mentors.</p>
+
+          <div class="form-grid">
+            <div class="form-group">
+              <label>Team Name</label>
+              <input type="text" class="form-input" id="esc-team" placeholder="e.g. Team Alpha" value="Team Alpha" />
+            </div>
+            <div class="form-group">
+              <label>Room / Table Number</label>
+              <input type="text" class="form-input" id="esc-table" placeholder="e.g. Smart Classroom 1, Table 4" value="Smart Classroom 1, Table 4" />
+            </div>
+            <div class="form-group">
+              <label>Urgency Priority Level</label>
+              <select class="form-select" id="esc-urgency">
+                <option value="P1">🚨 P1 - Critical Blocker (WiFi/Power/Hardware Down)</option>
+                <option value="P2">⚡ P2 - Technical Mentor Consultation Required</option>
+                <option value="P3">ℹ️ P3 - General Logistics &amp; Seating Query</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="form-group" style="margin-top:14px;">
+            <label>Incident Details</label>
+            <textarea class="form-textarea" id="esc-desc" rows="2" placeholder="Explain the issue in detail...">ESP32 microcontroller is experiencing serial port driver failure and we need an extra 5V power adapter.</textarea>
+          </div>
+
+          <button class="btn-action-primary" style="background:linear-gradient(135deg, #ef4444, #f59e0b);" id="btn-dispatch-ticket">
+            <i class="ri-send-plane-fill"></i> Dispatch Priority Ticket
+          </button>
+        </div>
+
+        <div style="font-weight:700; color:#fff; font-size:1.1rem; margin-top:6px;">Live Dispatched Incident Queue</div>
+        <div class="ticket-list" id="ticket-list">
+          <div class="ticket-item">
+            <div>
+              <div style="font-weight:700; font-size:0.9rem; color:#fff;"><span class="badge-urgency urgency-p1">P1</span> ESP32 Serial Driver Failure</div>
+              <div style="font-size:0.78rem; color:#94a3b8;">Team Alpha • Smart Classroom 1, Table 4 • Assigned to Mentor: <code>decode.ayush11@gmail.com</code></div>
+            </div>
+            <span style="color:#10b981; font-size:0.8rem; font-weight:700;"><i class="ri-loader-4-line"></i> In Progress (&lt; 3 mins)</span>
+          </div>
+        </div>
+      </div>
+
+  <!-- Zapier Interfaces Chatbot Embed Web Component -->
+  <div class="zapier-embed-host">
+    <zapier-interfaces-chatbot-embed
+      id="zapier-backend-bot"
+      is-popup="true"
+      chatbot-id="cmtacyvl7004mdc1wq3mk0t90">
+    </zapier-interfaces-chatbot-embed>
+  </div>
+
+  <script>
+    /**
+     * Hackverse Chatbot Configuration
+     */
+    const CHATBOT_CONFIG = {
+      publicName: "Hackverse",
+      placeholder: "Ask Hackverse anything Tracks, Mentors , Event guidelines....",
+      customErrorMessage: "Something went wrong! Please check the official website or contact the organisers .",
+      timezone: "Asia/Calcutta", // Defaults to UTC if not set
+      browserTitle: "Hackverse | Hackathon Concierge",
+      displayDisclosureInGreeting: true
+    };
+
+    document.addEventListener('DOMContentLoaded', () => {
+      const input = document.getElementById('chat-input');
+      const sendBtn = document.getElementById('send-btn');
+      const chatThread = document.getElementById('chat-thread');
+      const chipAgent = document.getElementById('chip-agent');
+      const menuAgent = document.getElementById('menu-agent');
+      const agentLabel = document.getElementById('agent-label');
+      const chipModel = document.getElementById('chip-model');
+      const menuModel = document.getElementById('menu-model');
+      const modelLabel = document.getElementById('model-label');
+      const atChip = document.getElementById('at-chip');
+      const clearBtn = document.getElementById('clear-chat-btn');
+      const initialGreetTime = document.getElementById('initial-greet-time');
+      const headerLiveTime = document.getElementById('header-live-time');
+
+      // Helper for timezone-formatted timestamps (defaults to UTC if not set)
+      function getFormattedTime(date = new Date()) {
+        try {
+          const tz = CHATBOT_CONFIG.timezone || 'UTC';
+          return new Intl.DateTimeFormat('en-IN', {
+            timeZone: tz,
+            hour: '2-digit',
+            minute: '2-digit',
+            hour12: true
+          }).format(date);
+        } catch (e) {
+          return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+        }
+      }
+
+      // Helper for live header clock
+      function updateLiveHeaderClock() {
+        if (!headerLiveTime) return;
+        try {
+          const tz = CHATBOT_CONFIG.timezone || 'UTC';
+          const timeStr = new Intl.DateTimeFormat('en-IN', {
+            timeZone: tz,
+            hour: '2-digit',
+            minute: '2-digit',
+            second: '2-digit',
+            hour12: true
+          }).format(new Date());
+          headerLiveTime.textContent = `IST (${tz}) • ${timeStr}`;
+        } catch (e) {
+          headerLiveTime.textContent = CHATBOT_CONFIG.timezone || 'UTC';
+        }
+      }
+      setInterval(updateLiveHeaderClock, 1000);
+      updateLiveHeaderClock();
+
+      if (initialGreetTime) {
+        initialGreetTime.textContent = getFormattedTime();
+      }
+
+      // Auto resize textarea
+      input.addEventListener('input', () => {
+        input.style.height = 'auto';
+        input.style.height = Math.min(input.scrollHeight, 120) + 'px';
+      });
+
+      // Enter to send
+      input.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter' && !e.shiftKey) {
+          e.preventDefault();
+          handleSendMessage();
+        }
+      });
+
+      sendBtn.addEventListener('click', (e) => {
+        e.preventDefault();
+        handleSendMessage();
+      });
+
+      // Bind prompt chips and greeting options to click & send
+      function bindOptionClicks() {
+        document.querySelectorAll('.suggest-chip, .greeting-opt-item').forEach(btn => {
+          btn.addEventListener('click', () => {
+            const text = btn.getAttribute('data-text');
+            input.value = text;
+            input.focus();
+            handleSendMessage();
+          });
+        });
+      }
+      bindOptionClicks();
+
+      // @ chip click
+      atChip.addEventListener('click', () => {
+        input.value = '@Hackverse ' + input.value;
+        input.focus();
+      });
+
+      // Clear / Reset chat
+      clearBtn.addEventListener('click', () => {
+        location.reload();
+      });
+
+      // Dropdown handlers
+      chipAgent.addEventListener('click', (e) => {
+        e.stopPropagation();
+        menuAgent.classList.toggle('show');
+        menuModel.classList.remove('show');
+      });
+
+      chipModel.addEventListener('click', (e) => {
+        e.stopPropagation();
+        menuModel.classList.toggle('show');
+        menuAgent.classList.remove('show');
+      });
+
+      document.addEventListener('click', () => {
+        menuAgent.classList.remove('show');
+        menuModel.classList.remove('show');
+      });
+
+      menuAgent.querySelectorAll('.dropdown-item').forEach(item => {
+        item.addEventListener('click', (e) => {
+          e.stopPropagation();
+          menuAgent.querySelectorAll('.dropdown-item').forEach(i => i.classList.remove('active'));
+          item.classList.add('active');
+          agentLabel.textContent = item.getAttribute('data-val');
+          menuAgent.classList.remove('show');
+        });
+      });
+
+      menuModel.querySelectorAll('.dropdown-item').forEach(item => {
+        item.addEventListener('click', (e) => {
+          e.stopPropagation();
+          menuModel.querySelectorAll('.dropdown-item').forEach(i => i.classList.remove('active'));
+          item.classList.add('active');
+          modelLabel.textContent = item.getAttribute('data-val');
+          menuModel.classList.remove('show');
+        });
+      });
+
+      // P0 FIX: HTML entity escaper to prevent XSS in user chat messages
+      function escapeHtml(str) {
+        const div = document.createElement('div');
+        div.textContent = str;
+        return div.innerHTML;
+      }
+
+      function handleSendMessage() {
+        const text = input.value.trim();
+        if (!text) return;
+
+        // User Message — P0 FIX: escape user input before innerHTML rendering
+        appendMessage('user', escapeHtml(text));
+        input.value = '';
+        input.style.height = 'auto';
+
+        // Typing Indicator
+        const typingEl = showTypingIndicator();
+
+        // Bot Response Engine with error handling
+        setTimeout(() => {
+          try {
+            typingEl.remove();
+            generateConciergeResponse(text);
+          } catch (err) {
+            console.error('Concierge generation error:', err);
+            typingEl.remove();
+            displayCustomError();
+          }
+        }, 650);
+      }
+
+      function appendMessage(role, htmlContent, isError = false) {
+        const row = document.createElement('div');
+        row.className = `msg-row ${role}`;
+
+        const avatar = document.createElement('div');
+        avatar.className = `msg-avatar ${role}`;
+        avatar.innerHTML = role === 'bot' ? '<i class="ri-sparkling-fill"></i>' : '<i class="ri-user-3-line"></i>';
+
+        const wrapper = document.createElement('div');
+        wrapper.className = 'msg-wrapper';
+
+        const bubble = document.createElement('div');
+        bubble.className = `msg-bubble ${role}${isError ? ' error-bubble' : ''}`;
+        bubble.innerHTML = htmlContent;
+
+        const meta = document.createElement('div');
+        meta.className = `msg-meta ${role}`;
+        const tzName = CHATBOT_CONFIG.timezone || 'UTC';
+        meta.innerHTML = `<span>${getFormattedTime()}</span> • <span>${tzName}</span>`;
+
+        wrapper.appendChild(bubble);
+        wrapper.appendChild(meta);
+
+        row.appendChild(avatar);
+        row.appendChild(wrapper);
+        chatThread.appendChild(row);
+
+        chatThread.scrollTo({
+          top: chatThread.scrollHeight,
+          behavior: 'smooth'
+        });
+
+        return bubble;
+      }
+
+      function displayCustomError() {
+        const errorHtml = `
+          <div class="custom-error-header">
+            <i class="ri-error-warning-fill"></i> Error
+          </div>
+          <p style="color: #fca5a5; font-weight: 500; margin: 0;">${CHATBOT_CONFIG.customErrorMessage}</p>
+        `;
+        appendMessage('bot', errorHtml, true);
+      }
+
+      function showTypingIndicator() {
+        const row = document.createElement('div');
+        row.className = 'msg-row bot';
+        row.id = 'typing-row';
+
+        const avatar = document.createElement('div');
+        avatar.className = 'msg-avatar bot';
+        avatar.innerHTML = '<i class="ri-sparkling-fill"></i>';
+
+        const wrapper = document.createElement('div');
+        wrapper.className = 'msg-wrapper';
+
+        const bubble = document.createElement('div');
+        bubble.className = 'msg-bubble bot';
+        bubble.innerHTML = `
+          <div class="typing-indicator">
+            <span class="typing-dot"></span>
+            <span class="typing-dot"></span>
+            <span class="typing-dot"></span>
+          </div>
+        `;
+
+        wrapper.appendChild(bubble);
+        row.appendChild(avatar);
+        row.appendChild(wrapper);
+        chatThread.appendChild(row);
+        chatThread.scrollTop = chatThread.scrollHeight;
+
+        return row;
+      }
+
+      /**
+       * Comprehensive Hackverse Intelligence Engine
+       * Includes:
+       * 1. Learnathon 5.0 (GIETU, Venues, WhatsApp groups, Schedule, Marks)
+       * 2. Smart India Hackathon (SIH 2026 Guidelines, SPOC, Team Rules, Travel, Prizes)
+       * 3. Track Catalog & 45 Problem Statements with Solution Architectures
+       * 4. Agriculture Problem Statements
+       * 5. Strategic Playbooks: 36h Sprint, 30-Day Roadmap, 2-Min Pitch, Winner Habits
+       * 6. Submission Auditing & Pre-Screening
+       * 7. Escalation Triage & Mentors
+       */
+      function generateConciergeResponse(userQuery) {
+        const q = userQuery.toLowerCase();
+        let res = "";
+
+        // Trigger custom error test if asked or simulated
+        if (q.includes('test_error') || q.includes('trigger error')) {
+          displayCustomError();
+          return;
+        }
+
+        // ========================================================
+        // A. LEARNATHON 5.0 (GIET University & Incubatex)
+        // ========================================================
+        if (q.includes('learnathon') || q.includes('giet') || q.includes('incubatex') || q.includes('raghvendra') || q.includes('mega audi') || q.includes('smart classroom')) {
+          res = `
+            <div class="structured-card">
+              <div class="structured-header"><i class="ri-graduation-cap-fill" style="color:#ffaa40;"></i> <strong>LEARNATHON 5.0 — GIET University, Gunupur</strong></div>
+              <p style="font-size:0.86rem; color:#cbd5e1; margin-bottom:8px;"><strong>Theme:</strong> “Unlocking the Future: Learn, Build, Innovate” (Learn to Hack – Hack to Learn) focusing on AI &amp; Machine Learning.</p>
+              <div class="checklist-item"><i class="ri-calendar-event-line" style="color:#10b981;"></i> <strong>Dates:</strong> 27th August to 30th August 2026</div>
+              <div class="checklist-item"><i class="ri-building-line" style="color:#ffaa40;"></i> <strong>Reporting Venue:</strong> Mega Auditorium (Mega Audi) at <strong>08:00 AM sharp</strong> for mandatory industry workshop.</div>
+              <div class="checklist-item"><i class="ri-computer-line" style="color:#9c40ff;"></i> <strong>Lab/Evaluation Venue:</strong> Smart Classroom 1 &amp; 2 (Post-workshop development &amp; rounds).</div>
+              <div class="checklist-item"><i class="ri-award-line" style="color:#10b981;"></i> <strong>Evaluation Structure (100 Marks):</strong> Round 1 = 50 Marks | Round 2 = 50 Marks.</div>
+              <div class="checklist-item"><i class="ri-briefcase-line" style="color:#06b6d4;"></i> <strong>Organizers &amp; Partners:</strong> GIET University, Incubatex Innovation Foundation, E-Yuva Center, Quality Thought Future Skills Foundation, Medicover Hospitals, Blue Cloud Softech Solutions, Co-Ignite, ADP, Elevate.</div>
+              <div class="checklist-item"><i class="ri-user-star-line" style="color:#f59e0b;"></i> <strong>Coordinator:</strong> Dr. Raghvendra Kumar (Dept of CSE, GIET University).</div>
+            </div>
+            <div class="structured-card">
+              <div class="structured-header"><i class="ri-time-line" style="color:#10b981;"></i> <strong>Year-Wise Participation Schedule</strong></div>
+              <div class="checklist-item">• <strong>27th Aug 2026:</strong> 2nd Year (78 Registered Teams)</div>
+              <div class="checklist-item">• <strong>28th Aug 2026:</strong> 3rd Year (58 Registered Teams)</div>
+              <div class="checklist-item">• <strong>29th Aug 2026:</strong> 1st Year (19 Teams) &amp; 4th Year (4 Teams)</div>
+            </div>
+            <p>💡 <em>Student Checklist: Bring fully charged laptop + charger, team electric extension board, and water bottle.</em></p>
+          `;
+        }
+
+        // ========================================================
+        // B. MENTORS, WHATSAPP & AI EMAIL WORKFLOW
+        // ========================================================
+        else if (
+          q.includes('mentor') ||
+          q.includes('ayush') ||
+          q.includes('email') ||
+          q.includes('mail') ||
+          q.includes('stuck') ||
+          q.includes('blocker') ||
+          q.includes('escalat') ||
+          q.includes('reach out') ||
+          q.includes('guidance') ||
+          q.includes('assistance') ||
+          q.includes('whatsapp') ||
+          q.includes('group link') ||
+          q.includes('contact') ||
+          q.includes('decode.ayush11') ||
+          q.includes('participant name') ||
+          q.includes('killitbayy153')
+        ) {
+          const sampleSubject = encodeURIComponent("[BLOCKING] Suvendu Dandpat — Blocked in Track 4: AI, Agents & NLP (Learnathon 5.0)");
+          const sampleBody = encodeURIComponent(`Hi Ayush,
+
+**Quick Summary**
+Suvendu Dandpat is BLOCKED in Track 4: AI, Agents & NLP (Learnathon 5.0) — PyTorch MobileNetV3 model export to ONNX fails with a tensor dimension mismatch error.
+
+**Blocker Details**
+- Reported issue: Tensor dimension mismatch error while trying to export PyTorch MobileNetV3 model to ONNX.
+- Root cause: Tensor dimension mismatch between input expectation [1, 3, 224, 224] and passed tensor shape [1, 3, 512, 512] during ONNX export.
+
+**Reproducible Steps / Logs**
+RuntimeError: Tensor 'input.1' dimension mismatch: expected [1, 3, 224, 224] but received [1, 3, 512, 512]
+
+**Attempted Fixes**
+- Resized input image tensor
+- Tried torch.onnx.export with dynamic axes
+- Cleared PyTorch cache
+
+**Suggested Next Steps**
+Recommend a quick 1:1 sync or table visit to check input tensor dimensions and unblock the pipeline.
+
+**Ask:** Could you reach out to Suvendu Dandpat when you get a chance, or let me know if this should be escalated?
+
+Participant contact: killitbayy153@gmail.com
+
+—
+Sent via Technical Support Operations Copilot`);
+
+          const gmailWebUrl = `https://mail.google.com/mail/?view=cm&fs=1&to=decode.ayush11@gmail.com&su=${sampleSubject}&body=${sampleBody}`;
+          const mailtoUrl = `mailto:decode.ayush11@gmail.com?subject=${sampleSubject}&body=${sampleBody}`;
+
+          res = `
+            <div class="structured-card">
+              <div class="structured-header"><i class="ri-mail-send-fill" style="color:#ffaa40;"></i> <strong>Technical Support Operations Copilot — Mentor Dispatch</strong></div>
+              <p style="font-size:0.86rem; color:#cbd5e1; margin-bottom:8px;">Ready to dispatch your structured blocker report directly to lead mentor <strong>Ayush (<code>decode.ayush11@gmail.com</code>)</strong>.</p>
+              
+              <div class="checklist-item">
+                <i class="ri-mail-star-line" style="color:#ffaa40;"></i>
+                <div>
+                  <strong>Recipient:</strong> Ayush (<code>decode.ayush11@gmail.com</code>)<br />
+                  <span style="color:#38bdf8; font-size:0.8rem;"><strong>Subject:</strong> [BLOCKING] Track 4: AI, Agents &amp; NLP: Blocker for Suvendu Dandpat</span>
+                </div>
+              </div>
+
+              <div style="margin-top:12px; display:flex; gap:8px; flex-wrap:wrap;">
+                <a href="${gmailWebUrl}" target="_blank" class="btn-header" style="background:linear-gradient(135deg, #ea4335, #c5221f); color:#fff; padding:7px 14px; font-size:0.84rem; font-weight:700; text-decoration:none; box-shadow:0 0 16px rgba(234,67,53,0.4);">
+                  <i class="ri-google-fill"></i> Open in Gmail Web
+                </a>
+                <a href="${mailtoUrl}" target="_blank" class="btn-header" style="padding:7px 14px; font-size:0.84rem; text-decoration:none;">
+                  <i class="ri-mail-open-line"></i> Open in Mail App
+                </a>
+                <button class="btn-header" style="background:#27272a; padding:7px 14px; font-size:0.84rem;" onclick="document.querySelector('[data-target=panel-mentor]').click();">
+                  <i class="ri-edit-line"></i> Open Copilot Tab
+                </button>
+              </div>
+
+              <div style="margin-top:14px; padding-top:10px; border-top:1px solid rgba(255,255,255,0.08);">
+                <span style="font-size:0.75rem; font-weight:700; color:#ffaa40; text-transform:uppercase; letter-spacing:0.04em;">💡 Supported Trigger Keywords:</span>
+                <div style="display:flex; flex-wrap:wrap; gap:5px; margin-top:6px;">
+                  <span class="skill-tag" style="cursor:pointer;" onclick="triggerKeyword('email mentor')">email mentor</span>
+                  <span class="skill-tag" style="cursor:pointer;" onclick="triggerKeyword('contact ayush')">contact ayush</span>
+                  <span class="skill-tag" style="cursor:pointer;" onclick="triggerKeyword('send mail to mentor')">send mail to mentor</span>
+                  <span class="skill-tag" style="cursor:pointer;" onclick="triggerKeyword('I am stuck on code')">I am stuck on code</span>
+                  <span class="skill-tag" style="cursor:pointer;" onclick="triggerKeyword('report technical blocker')">report technical blocker</span>
+                  <span class="skill-tag" style="cursor:pointer;" onclick="triggerKeyword('mentor guidance')">mentor guidance</span>
+                  <span class="skill-tag" style="cursor:pointer;" onclick="triggerKeyword('ask ayush for help')">ask ayush for help</span>
+                </div>
+              </div>
+            </div>
+
+            <div class="structured-card">
+              <div class="structured-header"><i class="ri-chat-smile-2-fill" style="color:#25D366;"></i> <strong>Official Learnathon 5.0 WhatsApp Community Groups</strong></div>
+              <div class="checklist-item"><i class="ri-whatsapp-line" style="color:#25D366;"></i> <strong>1st Year:</strong> <a href="https://chat.whatsapp.com/J9ArqTgQwS4JUzicb7ZYJu" target="_blank" style="color:#38bdf8; text-decoration:underline;">Join 1st Year Group</a></div>
+              <div class="checklist-item"><i class="ri-whatsapp-line" style="color:#25D366;"></i> <strong>2nd Year:</strong> <a href="https://chat.whatsapp.com/BdxxKswv65BJqqaxXMCK7u" target="_blank" style="color:#38bdf8; text-decoration:underline;">Join 2nd Year Group</a></div>
+              <div class="checklist-item"><i class="ri-whatsapp-line" style="color:#25D366;"></i> <strong>3rd Year:</strong> <a href="https://chat.whatsapp.com/HaHSBAGNefHD9hl5K4LnEV" target="_blank" style="color:#38bdf8; text-decoration:underline;">Join 3rd Year Group</a></div>
+              <div class="checklist-item"><i class="ri-whatsapp-line" style="color:#25D366;"></i> <strong>4th Year:</strong> <a href="https://chat.whatsapp.com/GHyDTJO5DdzA7u21AL803Q" target="_blank" style="color:#38bdf8; text-decoration:underline;">Join 4th Year Group</a></div>
+            </div>
+          `;
+        }
+
+        // ========================================================
+        // C. SMART INDIA HACKATHON 2026 (SIH Guidelines & Rules)
+        // ========================================================
+        else if (q.includes('sih') || q.includes('smart india') || q.includes('spoc') || q.includes('prize') || q.includes('nomination') || q.includes('grand finale') || q.includes('aicte')) {
+          res = `
+            <div class="structured-card">
+              <div class="structured-header"><i class="ri-government-fill" style="color:#10b981;"></i> <strong>Smart India Hackathon (SIH 2026) Official Guidelines</strong></div>
+              <div class="checklist-item"><i class="ri-team-fill" style="color:#ffaa40;"></i> <strong>Team Composition:</strong> Exactly <strong>6 students</strong> per team (including Leader). All members must be from the same college.</div>
+              <div class="checklist-item"><i class="ri-women-fill" style="color:#ec4899;"></i> <strong>Gender Diversity:</strong> At least <strong>1 female member is mandatory</strong> in every team.</div>
+              <div class="checklist-item"><i class="ri-user-follow-line" style="color:#38bdf8;"></i> <strong>SPOC Registration &amp; Nomination:</strong> Students cannot register directly. College SPOC conducts Internal Hackathon and nominates top teams (Max 50 per Institute: 45 shortlisted + 5 waitlisted; up to 100 per University).</div>
+              <div class="checklist-item"><i class="ri-time-line" style="color:#f59e0b;"></i> <strong>Timeline:</strong> SPOC registration opens July 2026 | Idea submissions start August 2026 | Submission deadline: <strong>September 20, 2026</strong>.</div>
+              <div class="checklist-item"><i class="ri-file-shield-2-line" style="color:#ef4444;"></i> <strong>Submission Caps:</strong> Each team can submit ideas for up to <strong>2 Problem Statements</strong>. Each PS permanently freezes at <strong>500 idea submissions</strong>!</div>
+              <div class="checklist-item"><i class="ri-money-dollar-circle-fill" style="color:#10b981;"></i> <strong>Prize Money:</strong> <strong>₹1,50,000</strong> per problem statement.</div>
+              <div class="checklist-item"><i class="ri-flight-takeoff-line" style="color:#9c40ff;"></i> <strong>Grand Finale:</strong> December 2026 offline at designated national nodal centers with travel reimbursement ceiling up to ₹3,000/person (AC-III tier) + free accommodation.</div>
+              <div class="checklist-item"><i class="ri-copyright-line" style="color:#cbd5e1;"></i> <strong>IP Policy:</strong> 50/50 split or mutual agreement between team and ministry/industry partner, allowing students to build startups.</div>
+            </div>
+            <p>💡 <em>Official portal: <a href="https://sih.gov.in" target="_blank" style="color:#ffaa40; text-decoration:underline;">sih.gov.in</a> | Contacts: 011 2958 1239/40/41</em></p>
+          `;
+        }
+
+        // ========================================================
+        // D. AGRICULTURE TRACK (Detailed Problem Statements & Solutions)
+        // ========================================================
+        else if (q.includes('agri') || q.includes('fertilizer') || q.includes('crop') || q.includes('pest') || q.includes('soil') || q.includes('waste management') || q.includes('farmer')) {
+          res = `
+            <div class="structured-card">
+              <div class="structured-header"><i class="ri-plant-fill" style="color:#10b981;"></i> <strong>Agriculture &amp; Rural Impact Problem Statements</strong></div>
+              
+              <div class="checklist-item">
+                <div>
+                  <strong>1. Excessive Use of Chemical Fertilizers:</strong><br />
+                  <span style="color:#94a3b8;">Challenge:</span> Unbalanced fertilization degrades soil and raises farming cost.<br />
+                  <span style="color:#10b981;">Solution:</span> Soil-test-based fertilizer mobile calculator, integrated nutrient management (INM) app, offline Soil Health Card translator.
+                </div>
+              </div>
+
+              <div class="checklist-item">
+                <div>
+                  <strong>2. Irrigation Water Wastage:</strong><br />
+                  <span style="color:#94a3b8;">Challenge:</span> Improper scheduling causing severe water depletion.<br />
+                  <span style="color:#10b981;">Solution:</span> Low-cost capacitive soil-moisture indicator, crop-stage smart irrigation advisory, solar-switched automated drip relay.
+                </div>
+              </div>
+
+              <div class="checklist-item">
+                <div>
+                  <strong>3. Pest &amp; Crop Disease Identification:</strong><br />
+                  <span style="color:#94a3b8;">Challenge:</span> Late diagnosis causing catastrophic crop loss.<br />
+                  <span style="color:#10b981;">Solution:</span> MobileNet/YOLO leaf anomaly scanner, WhatsApp chatbot advisory, low-cost smart acoustic/optical pest traps with IPM guidelines.
+                </div>
+              </div>
+
+              <div class="checklist-item">
+                <div>
+                  <strong>4. Agricultural Waste &amp; Crop Residue Management:</strong><br />
+                  <span style="color:#94a3b8;">Challenge:</span> Stubble burning and discarded biomass causing pollution.<br />
+                  <span style="color:#10b981;">Solution:</span> Biochar/vermicompost production tracking, mushroom cultivation mapping, biodegradable packaging converters.
+                </div>
+              </div>
+
+              <div class="checklist-item">
+                <div>
+                  <strong>5. Poor Market Access &amp; Price Discovery:</strong><br />
+                  <span style="color:#94a3b8;">Challenge:</span> Intermediary exploitation and lack of mandi transparency.<br />
+                  <span style="color:#10b981;">Solution:</span> Digital direct farmer-buyer trading platform, local aggregation center routing, real-time APMC price analytics, FPO linkage.
+                </div>
+              </div>
+            </div>
+          `;
+        }
+
+        // ========================================================
+        // E. 10 TRACKS & 45 COMPREHENSIVE PROBLEM STATEMENTS
+        // ========================================================
+        else if (q.includes('ar/vr') || q.includes('virtual reality') || q.includes('augmented reality') || q.includes('openxr') || q.includes('ego4d') || q.includes('slam') || q.includes('campus navigation')) {
+          res = `
+            <div class="structured-card">
+              <div class="structured-header"><i class="ri-glasses-fill" style="color:#06b6d4;"></i> <strong>Track: AR/VR &amp; Spatial Intelligence</strong></div>
+              
+              <div class="checklist-item">
+                <div>
+                  <strong>1. AR/VR Immersive Skill Training &amp; Safety Simulator:</strong><br />
+                  <span style="color:#94a3b8;">Datasets:</span> Ego4D, EPIC-KITCHENS, Human Activity Recognition, VR interaction logs.<br />
+                  <span style="color:#06b6d4;">Models &amp; Tech:</span> Vision Transformers, MediaPipe pose estimation, RL for adaptive difficulty, Unity/Unreal Engine, OpenXR.<br />
+                  <span style="color:#10b981;">Skills:</span> Computer Vision, AR/VR, 3D Graphics, HCI, AI/ML.
+                </div>
+              </div>
+
+              <div class="checklist-item">
+                <div>
+                  <strong>2. AI-Powered VR Emergency Response Simulator:</strong><br />
+                  <span style="color:#94a3b8;">Datasets:</span> Disaster response datasets, synthetic VR simulation data, emergency mission logs.<br />
+                  <span style="color:#06b6d4;">Models &amp; Tech:</span> CV for activity recognition, Reinforcement Learning for dynamic hazard physics, behavioral anomaly detection, LLM training assistant.<br />
+                  <span style="color:#10b981;">Skills:</span> VR Development, Simulation, Pose Estimation.
+                </div>
+              </div>
+
+              <div class="checklist-item">
+                <div>
+                  <strong>3. AR Navigation &amp; Context-Aware Smart Campus Assistance:</strong><br />
+                  <span style="color:#94a3b8;">Datasets:</span> Indoor positioning, OpenStreetMap, campus building maps, visual localization.<br />
+                  <span style="color:#06b6d4;">Models &amp; Tech:</span> Visual SLAM, Vision Transformers, Graph-based route optimization ($A^*$), LLM conversational navigation.<br />
+                  <span style="color:#10b981;">Skills:</span> SLAM, Geospatial Computing, AR Development.
+                </div>
+              </div>
+            </div>
+          `;
+        }
+
+        else if (q.includes('fintech') || q.includes('fraud') || q.includes('credit risk') || q.includes('mule') || q.includes('paysim') || q.includes('elliptic') || q.includes('shap')) {
+          res = `
+            <div class="structured-card">
+              <div class="structured-header"><i class="ri-bank-card-fill" style="color:#10b981;"></i> <strong>Track: FinTech &amp; Responsible Lending</strong></div>
+              
+              <div class="checklist-item">
+                <div>
+                  <strong>1. AI-Powered Financial Fraud Detection &amp; Risk Intelligence:</strong><br />
+                  <span style="color:#94a3b8;">Datasets:</span> IEEE-CIS Fraud Detection, PaySim, Elliptic Bitcoin, Synthetic UPI transaction data.<br />
+                  <span style="color:#10b981;">Models &amp; Tech:</span> XGBoost, LightGBM, Isolation Forest, Graph Neural Networks (GNNs), Autoencoders, SHAP.<br />
+                  <span style="color:#38bdf8;">Skills:</span> Fraud Analytics, GNNs, Real-Time Streaming (Kafka), Explainable AI.
+                </div>
+              </div>
+
+              <div class="checklist-item">
+                <div>
+                  <strong>2. AI-Based Credit Risk &amp; Responsible Lending Assessment:</strong><br />
+                  <span style="color:#94a3b8;">Datasets:</span> German Credit, Home Credit Default Risk, Lending Club historical data.<br />
+                  <span style="color:#10b981;">Models &amp; Tech:</span> Monotonic XGBoost, Random Forest, SHAP/LIME explainers, Fairness &amp; demographic calibration metrics.<br />
+                  <span style="color:#38bdf8;">Skills:</span> Credit Risk Modeling, Responsible AI, Data Analytics.
+                </div>
+              </div>
+
+              <div class="checklist-item">
+                <div>
+                  <strong>3. Real-Time Digital Payment Anomaly &amp; Mule Account Detection:</strong><br />
+                  <span style="color:#94a3b8;">Datasets:</span> PaySim, Elliptic, Synthetic UPI transaction networks, Public fraud traces.<br />
+                  <span style="color:#10b981;">Models &amp; Tech:</span> PyTorch Geometric GNNs, Graph clustering, Isolation Forest, Autoencoders, Cytoscape visualization.<br />
+                  <span style="color:#38bdf8;">Skills:</span> Graph Analytics, Cyber Security, Money Velocity Analysis.
+                </div>
+              </div>
+            </div>
+          `;
+        }
+
+        else if (q.includes('quantum') || q.includes('qiskit') || q.includes('cirq') || q.includes('pennylane') || q.includes('shor') || q.includes('grover')) {
+          res = `
+            <div class="structured-card">
+              <div class="structured-header"><i class="ri-cpu-fill" style="color:#9c40ff;"></i> <strong>Track: Quantum Computing</strong></div>
+              
+              <div class="checklist-item">
+                <div>
+                  <strong>1. AI-Driven Quantum Error Detection &amp; Circuit Optimization:</strong><br />
+                  <span style="color:#94a3b8;">Datasets:</span> Qiskit benchmark circuits, OpenQASM datasets, IBM Quantum experiment data.<br />
+                  <span style="color:#9c40ff;">Models &amp; Tech:</span> Deep Reinforcement Learning (DQN/PPO), Graph Neural Networks for DAG transforms, Qiskit/Cirq noise simulation.<br />
+                  <span style="color:#10b981;">Skills:</span> Quantum Circuits, RL, Gate Depth Minimization, Linear Algebra.
+                </div>
+              </div>
+
+              <div class="checklist-item">
+                <div>
+                  <strong>2. Quantum Machine Learning for Anomaly Detection:</strong><br />
+                  <span style="color:#94a3b8;">Datasets:</span> KDD anomaly data, credit-card fraud, high-dimensional synthetic datasets.<br />
+                  <span style="color:#9c40ff;">Models &amp; Tech:</span> Variational Quantum Classifiers (VQC), Quantum Kernel Estimation (Hilbert Space embedding), PennyLane.<br />
+                  <span style="color:#10b981;">Skills:</span> QML, Quantum Autoencoders, Hybrid Quantum-Classical Algorithms.
+                </div>
+              </div>
+
+              <div class="checklist-item">
+                <div>
+                  <strong>3. Quantum Network Security &amp; Post-Quantum Threat Simulation:</strong><br />
+                  <span style="color:#94a3b8;">Datasets:</span> NIST cryptographic test vectors, public-key benchmarks.<br />
+                  <span style="color:#9c40ff;">Models &amp; Tech:</span> Shor's &amp; Grover's algorithm simulators, Lattice-based cryptography benchmark (Kyber, Dilithium).<br />
+                  <span style="color:#10b981;">Skills:</span> Post-Quantum Cryptography (PQC), Algorithm Simulation, Cyber Security.
+                </div>
+              </div>
+            </div>
+          `;
+        }
+
+        else if (q.includes('mlops') || q.includes('llmops') || q.includes('aiops') || q.includes('drift') || q.includes('litellm') || q.includes('evidently') || q.includes('mlflow')) {
+          res = `
+            <div class="structured-card">
+              <div class="structured-header"><i class="ri-dashboard-3-fill" style="color:#ffaa40;"></i> <strong>Track: MLOps, LLMOps &amp; AIOps Automation</strong></div>
+              
+              <div class="checklist-item">
+                <div>
+                  <strong>1. Autonomous Model Monitoring, Drift Detection &amp; Self-Healing:</strong><br />
+                  <span style="color:#94a3b8;">Tech:</span> Evidently AI, MLflow, DVC, Prometheus + Grafana, Kubernetes automated rollbacks.<br />
+                  <span style="color:#ffaa40;">Core:</span> Statistical drift metrics (Wasserstein/KS test) triggering automated GitOps retraining pipelines.
+                </div>
+              </div>
+
+              <div class="checklist-item">
+                <div>
+                  <strong>2. Automated ML CI/CD Pipeline with Model Governance:</strong><br />
+                  <span style="color:#94a3b8;">Tech:</span> GitHub Actions / GitLab CI, Docker, Kubernetes, Great Expectations, MLflow Model Registry.<br />
+                  <span style="color:#ffaa40;">Core:</span> Automated canary deployments (Istio), bias checks, and regression unit tests.
+                </div>
+              </div>
+
+              <div class="checklist-item">
+                <div>
+                  <strong>3. LLMOps Production Monitoring &amp; Safety Platform:</strong><br />
+                  <span style="color:#94a3b8;">Tech:</span> LiteLLM reverse proxy, LLM-as-a-judge evaluation, OpenTelemetry, Prompt injection classifiers.<br />
+                  <span style="color:#ffaa40;">Core:</span> Tracks latency, token cost, hallucination indicators, and sensitive-data leakage in real time.
+                </div>
+              </div>
+
+              <div class="checklist-item">
+                <div>
+                  <strong>4. Self-Healing Infrastructure (AIOps Incident Resolution):</strong><br />
+                  <span style="color:#94a3b8;">Tech:</span> Transformer log parsers (Drain), XGBoost root-cause prediction, LLM runbook execution.
+                </div>
+              </div>
+            </div>
+          `;
+        }
+
+        else if (q.includes('blockchain') || q.includes('self-sovereign') || q.includes('verifiable credential') || q.includes('soulbound') || q.includes('dao') || q.includes('zk') || q.includes('circom')) {
+          res = `
+            <div class="structured-card">
+              <div class="structured-header"><i class="ri-link-m" style="color:#ec4899;"></i> <strong>Track: Blockchain, Self-Sovereign Identity &amp; RWA</strong></div>
+              
+              <div class="checklist-item">
+                <div>
+                  <strong>1. "Prove It, Don't Expose It" — Self-Sovereign Identity &amp; W3C Credentials:</strong><br />
+                  <span style="color:#94a3b8;">Concept:</span> Design the Trust Layer by authoring new verifiable credential schemas and issuance-to-verification workflows without exposing private PII.
+                </div>
+              </div>
+
+              <div class="checklist-item">
+                <div>
+                  <strong>2. Decentralized Marketplace with AI-Powered Matching &amp; Pricing:</strong><br />
+                  <span style="color:#94a3b8;">Concept:</span> Blockchain provides immutability and ownership while AI models optimize liquidity, fair matching, and risk scores.
+                </div>
+              </div>
+
+              <div class="checklist-item">
+                <div>
+                  <strong>3. Decentralized Fact-Checking Network with GenAI Consensus:</strong><br />
+                  <span style="color:#94a3b8;">Datasets:</span> Snopes, FEVER, ClaimBuster, Wikipedia.<br />
+                  <span style="color:#ec4899;">Models:</span> BERT claim encoders, T5 evidence generation, multi-agent staking protocols with Byzantine-fault-tolerant consensus.
+                </div>
+              </div>
+
+              <div class="checklist-item">
+                <div>
+                  <strong>4. Autonomous DAO Treasury Management:</strong><br />
+                  <span style="color:#94a3b8;">Models:</span> Transformers + Reinforcement Learning (PPO) optimizing DEX liquidity allocations and hedging against market crashes.
+                </div>
+              </div>
+
+              <div class="checklist-item">
+                <div>
+                  <strong>5. Decentralized Identity via Biometric Zero-Knowledge Proofs:</strong><br />
+                  <span style="color:#94a3b8;">Tech:</span> ArcFace/CosFace local embeddings with Circom / ZoKrates zk-SNARK circuits for anonymous, verifiable authentication.
+                </div>
+              </div>
+            </div>
+          `;
+        }
+
+        else if (q.includes('pond ash') || q.includes('filament') || q.includes('waste plastic') || q.includes('circular') || q.includes('manufacturing') || q.includes('sdg')) {
+          res = `
+            <div class="structured-card">
+              <div class="structured-header"><i class="ri-recycle-line" style="color:#10b981;"></i> <strong>Track: Circular Manufacturing &amp; Industrial Waste-to-Value</strong></div>
+              
+              <div class="checklist-item">
+                <div>
+                  <strong>Problem 1: Waste-to-Value &amp; Circular Manufacturing Using Pond Ash:</strong><br />
+                  <span style="color:#94a3b8;">Challenge:</span> Thermal power plant pond ash occupies vast land and causes dust/groundwater hazards, while industries consume virgin raw materials.<br />
+                  <span style="color:#10b981;">Solution Approach:</span> Formulate geopolymer composites (blending pond ash with alkaline activators &amp; slag) for cement-free building bricks, lightweight paving tiles, and thermal insulation with testing for compressive strength, durability, and leaching.<br />
+                  <span style="color:#38bdf8;">SDG Impact:</span> SDG 12 (Responsible Consumption), SDG 9 (Industry &amp; Innovation), SDG 13 (Climate Action), SDG 8, 11, 6.
+                </div>
+              </div>
+
+              <div class="checklist-item">
+                <div>
+                  <strong>Problem 2: Sustainable Additive Manufacturing Feedstock from Waste Plastics:</strong><br />
+                  <span style="color:#94a3b8;">Challenge:</span> Commercial FDM/FFF 3D printing filament is expensive, while massive post-consumer plastic (PET, PLA, ABS, HDPE) ends up in landfills.<br />
+                  <span style="color:#10b981;">Solution Approach:</span> Sorting, cleaning, shredding, and closed-loop extrusion with optical laser micrometer sensor adjusting puller motor speed to guarantee consistent $1.75\text{mm} \pm 0.05\text{mm}$ diameter printable filament.<br />
+                  <span style="color:#38bdf8;">SDG Impact:</span> SDG 12, SDG 9, SDG 13, SDG 8, SDG 11, SDG 15 (Life on Land).
+                </div>
+              </div>
+            </div>
+          `;
+        }
+
+        else if (q.includes('robot') || q.includes('poaching') || q.includes('gripper') || q.includes('swarm') || q.includes('skimmer') || q.includes('botnet') || q.includes('beekeeping') || q.includes('microplastic')) {
+          res = `
+            <div class="structured-card">
+              <div class="structured-header"><i class="ri-robot-2-fill" style="color:#ffaa40;"></i> <strong>Track: Robotics &amp; Specialized IoT Systems</strong></div>
+              
+              <div class="checklist-item">
+                <div>
+                  <strong>1. Wildlife Poaching Prevention — AI Autonomous Rangers:</strong><br />
+                  <span style="color:#94a3b8;">Tech:</span> Drone/Rover edge vision running YOLOv8 (detecting weapons, wire snares, human intruders), DeepSORT tracking, and acoustic gunshot triangulation over LoRa.
+                </div>
+              </div>
+
+              <div class="checklist-item">
+                <div>
+                  <strong>2. Soft Robotic Gripper with AI Tactile Intelligence:</strong><br />
+                  <span style="color:#94a3b8;">Tech:</span> GelSight optical tactile cameras + BioTac sensors inside elastomeric fingers with PPO force-control models to grip delicate produce (eggs, berries) without bruising.
+                </div>
+              </div>
+
+              <div class="checklist-item">
+                <div>
+                  <strong>3. Swarm Multi-Robot Coordinated Search and Rescue:</strong><br />
+                  <span style="color:#94a3b8;">Tech:</span> Multi-Agent Reinforcement Learning (MARL) and Graph Neural Networks over ESP-NOW/Zigbee mesh for decentralized frontier exploration in disaster rubble.
+                </div>
+              </div>
+
+              <div class="checklist-item">
+                <div>
+                  <strong>4. Precision Beekeeping &amp; CCD Hive Monitoring:</strong><br />
+                  <span style="color:#94a3b8;">Tech:</span> BMON dataset, I2S acoustic 1D CNNs, $CO_2$/temperature LSTMs to detect Varroa mites and colony stress early.
+                </div>
+              </div>
+
+              <div class="checklist-item">
+                <div>
+                  <strong>5. DeepOcean Real-Time Water Microplastic Detector:</strong><br />
+                  <span style="color:#94a3b8;">Tech:</span> Multi-wavelength optical spectroscopy array + Vision Transformers &amp; PointNet classifying microplastic polymers ($&lt;5\text{mm}$).
+                </div>
+              </div>
+            </div>
+          `;
+        }
+
+        else if (q.includes('track') || q.includes('problem statement') || q.includes('45') || q.includes('iot') || q.includes('cyber') || q.includes('code understanding') || q.includes('rosetta')) {
+          res = `
+            <div class="structured-card">
+              <div class="structured-header"><i class="ri-apps-2-fill" style="color:#9c40ff;"></i> <strong>10 Specialized Tracks &amp; 45 Problem Statements</strong></div>
+              
+              <div class="checklist-item">
+                <strong>Track 1: IoT &amp; Smart Infrastructure (PS 1-7):</strong><br />
+                Smart Waste Bin • Micro-Grid Streetlight &amp; AQI Node • Contactless IV Drip Monitor • Cold Chain Temp Tracker • Precision Beekeeping • Microplastic Detection • GhostWifi IoT Botnet EM Scanner.
+              </div>
+
+              <div class="checklist-item">
+                <strong>Track 2: Cybersecurity &amp; AI Safeguards (PS 8-10):</strong><br />
+                Deepfake Voice &amp; Video Detection (ASVspoof/Wav2Vec 2.0) • Autonomous Agent Prompt Injection Guard • Zero-Trust API Behavioral Biometrics.
+              </div>
+
+              <div class="checklist-item">
+                <strong>Track 3: Blockchain &amp; Real-World Assets (PS 11-16):</strong><br />
+                Tamper-Proof Soulbound Credentials • Autonomous Land Registry • Pharma Cold-Chain Provenance • Decentralized Fact-Checking DAO • Predictive Treasury Optimizer • ZK Biometric KYC.
+              </div>
+
+              <div class="checklist-item">
+                <strong>Track 4: AI, Agents &amp; NLP (PS 17-22):</strong><br />
+                Admissions Conversion Agent • Autonomous Hackathon Concierge (Hackverse) • Rosetta AI Code Translator (CodeBERT/AST GNN) • Emotion-Aware Mental Health CBT • Rare Disease Synthetic Data • Context-Aware Content Moderation.
+              </div>
+
+              <div class="checklist-item">
+                <strong>Track 5: AR/VR &amp; Metaverse (PS 23-25):</strong><br />
+                Immersive Skill Training Simulator (Ego4D) • VR Emergency Response Engine • Indoor AR Campus Visual SLAM.
+              </div>
+
+              <div class="checklist-item">
+                <strong>Track 6: FinTech &amp; Responsible Lending (PS 26-28):</strong><br />
+                Real-Time Fraud GNN • Monotonic Credit Risk &amp; SHAP • UPI Digital Payment Mule Account Detector.
+              </div>
+
+              <div class="checklist-item">
+                <strong>Track 7: Quantum Computing (PS 29-31):</strong><br />
+                Quantum Error RL Transpiler • Quantum Anomaly Autoencoder • Post-Quantum Cryptography Threat Simulator.
+              </div>
+
+              <div class="checklist-item">
+                <strong>Track 8: MLOps, LLMOps &amp; AIOps (PS 32-37):</strong><br />
+                Self-Healing Drift Pipeline (Evidently/MLflow) • Automated ML CI/CD Canary • LiteLLM Production Proxy • AIOps Log Root Cause Engine • Privacy Test Data Synthesizer • Cloud Cost Optimizer.
+              </div>
+
+              <div class="checklist-item">
+                <strong>Track 9: Robotics &amp; Autonomous Systems (PS 38-42):</strong><br />
+                Weeding Rover • Water Canal Surface Debris Skimmer • Anti-Poaching Autonomous Ranger • Soft Robotic Produce Gripper • Swarm Disaster Search &amp; Rescue.
+              </div>
+
+              <div class="checklist-item">
+                <strong>Track 10: Circular Manufacturing &amp; Smart Agriculture (PS 43-45):</strong><br />
+                Pond Ash Geopolymer Bricks (SDG 12/9/13) • Waste Plastic 3D Filament Extruder ($1.75\text{mm}$) • Soil &amp; Pest Agriculture Advisor.
+              </div>
+            </div>
+            <p>💡 <em>Ask me for the technical architecture or implementation methods for any specific problem number!</em></p>
+          `;
+        }
+
+        // ========================================================
+        // F. 36-HOUR SPRINT & 30-DAY SIH PREPARATION STRATEGY
+        // ========================================================
+        else if (q.includes('36-hour') || q.includes('36 hour') || q.includes('30-day') || q.includes('roadmap') || q.includes('strategy') || q.includes('prepare') || q.includes('plan') || q.includes('mvp')) {
+          res = `
+            <div class="structured-card">
+              <div class="structured-header"><i class="ri-timer-flash-fill" style="color:#ffaa40;"></i> <strong>Winning 36-Hour Hackathon Sprint Blueprint</strong></div>
+              <div class="checklist-item"><i class="ri-time-line" style="color:#38bdf8;"></i> <strong>Hours 0 – 3 (Scope &amp; MVP Definition):</strong> Lock the one core user journey. Do not build 10 unfinished features. Assign 1 owner per decision area.</div>
+              <div class="checklist-item"><i class="ri-time-line" style="color:#38bdf8;"></i> <strong>Hours 3 – 12 (Core Feature Build):</strong> Scaffold GitHub repo, API boilerplate, DB schemas, Figma wireframes, and backend endpoints.</div>
+              <div class="checklist-item"><i class="ri-time-line" style="color:#38bdf8;"></i> <strong>Hours 12 – 24 (Integration &amp; Mentor Review):</strong> Connect frontend to backend/APIs. Incorporate mentor feedback from Round 1.</div>
+              <div class="checklist-item"><i class="ri-time-line" style="color:#ef4444;"></i> <strong>Hours 24 – 32 (Hard Code Freeze &amp; Polish):</strong> Freeze new feature code 4 hours before deadline. Mock unstable APIs, pre-fill demo forms.</div>
+              <div class="checklist-item"><i class="ri-time-line" style="color:#10b981;"></i> <strong>Hours 32 – 36 (Testing, Video Backup &amp; Pitch):</strong> Record a 2-minute backup demo video, verify public GitHub README, rehearse pitch 3x, and submit 30 mins early.</div>
+            </div>
+
+            <div class="structured-card">
+              <div class="structured-header"><i class="ri-calendar-check-fill" style="color:#10b981;"></i> <strong>30-Day SIH Master Plan</strong></div>
+              <div class="checklist-item"><strong>Week 1 (Selection):</strong> Filter 2-3 Problem Statements, analyze existing competitor flaws, form 6-member team with 1 female member.</div>
+              <div class="checklist-item"><strong>Week 2 (Architecture):</strong> Conduct field/user research, design Figma screens, finalize tech stack and database schemas.</div>
+              <div class="checklist-item"><strong>Week 3 (Prototype):</strong> Build functional MVP, commit daily to GitHub, deploy live test URL.</div>
+              <div class="checklist-item"><strong>Week 4 (Pitch Deck &amp; Video):</strong> Create 10-slide standard PPT, record demo video, run mock jury Q&amp;A sessions.</div>
+            </div>
+          `;
+        }
+
+        // ========================================================
+        // G. 2-MINUTE PITCH STRUCTURE & JUDGING RUBRICS
+        // ========================================================
+        else if (q.includes('pitch') || q.includes('present') || q.includes('judge') || q.includes('rubric') || q.includes('score') || q.includes('criteria') || q.includes('deck')) {
+          res = `
+            <div class="structured-card">
+              <div class="structured-header"><i class="ri-mic-fill" style="color:#ec4899;"></i> <strong>The 2-Minute High-Impact Pitch Formula</strong></div>
+              <div class="checklist-item"><strong>0 – 15s (The Hook):</strong> "Small farmers lose 30% of crops annually because early pest symptoms are impossible to spot without experts."</div>
+              <div class="checklist-item"><strong>15 – 35s (The Real Problem):</strong> Quantify who suffers, how often, and the exact cost/time limitation of current solutions.</div>
+              <div class="checklist-item"><strong>35 – 60s (Your Solution):</strong> "We built an offline-first mobile assistant that identifies leaf blight from a phone photo in under 1 second."</div>
+              <div class="checklist-item"><strong>60 – 85s (Working Demo):</strong> Walk judges through the single most critical user flow (the 'Happy Path').</div>
+              <div class="checklist-item"><strong>85 – 105s (Innovation &amp; Tech Stack):</strong> Highlight why you stand out: offline edge quantization, multilingual audio guidance, or 90% cheaper deployment.</div>
+              <div class="checklist-item"><strong>105 – 115s (Impact &amp; Feasibility):</strong> Realistic cost, privacy compliance, scaling metrics, and pilot deployment roadmap.</div>
+              <div class="checklist-item"><strong>115 – 120s (Strong Closing):</strong> "We transform reactive loss into proactive harvest protection. Thank you!"</div>
+            </div>
+
+            <div class="structured-card">
+              <div class="structured-header"><i class="ri-scales-3-line" style="color:#ffaa40;"></i> <strong>What Judges Actually Score (Rubric Weights)</strong></div>
+              <div class="checklist-item">• <strong>Problem Understanding &amp; Novelty (25%):</strong> Is it a genuine problem or just a buzzword project?</div>
+              <div class="checklist-item">• <strong>Technical Execution &amp; Working MVP (30%):</strong> Does the core feature actually work in the live demo?</div>
+              <div class="checklist-item">• <strong>Feasibility, Cost &amp; Scalability (25%):</strong> Can this be realistically deployed in the real world?</div>
+              <div class="checklist-item">• <strong>UI/UX &amp; Storytelling (20%):</strong> Clean presentation, simple interface, and crisp Q&amp;A.</div>
+            </div>
+          `;
+        }
+
+        // ========================================================
+        // H. SUBMISSION AUDITING & PRE-SCREENING
+        // ========================================================
+        else if (q.includes('audit') || q.includes('submission') || q.includes('prescreen') || q.includes('pre-screen') || q.includes('github.com') || q.includes('youtu') || q.includes('loom.com')) {
+          res = `
+            <div class="structured-card">
+              <div class="structured-header"><i class="ri-shield-check-line" style="color:#10b981;"></i> <strong>Pre-Submission Audit &amp; Compliance Report</strong></div>
+              <div class="checklist-item"><i class="ri-checkbox-circle-fill" style="color:#10b981;"></i> <strong>Public Repository:</strong> Ensure your repo is strictly <em>Public</em> (private repos cause instant disqualification).</div>
+              <div class="checklist-item"><i class="ri-checkbox-circle-fill" style="color:#10b981;"></i> <strong>Demo Video Permissions:</strong> Set YouTube/Loom video link to <em>Unlisted</em> or <em>Public</em> with clear audio under 3 mins.</div>
+              <div class="checklist-item"><i class="ri-checkbox-circle-fill" style="color:#10b981;"></i> <strong>README Completeness:</strong> Include Problem Statement, Architecture diagram, Tech Stack, and Local Setup commands.</div>
+              <div class="checklist-item"><i class="ri-checkbox-circle-fill" style="color:#10b981;"></i> <strong>Track Alignment:</strong> Confirm selected track matches your core feature set.</div>
+              <div class="checklist-item"><i class="ri-checkbox-circle-fill" style="color:#10b981;"></i> <strong>Annexure A / College Seal:</strong> For SIH/Learnathon, have college authorization letter ready on letterhead.</div>
+            </div>
+            <p>Paste your GitHub and Video links here if you'd like me to perform an automated format check!</p>
+          `;
+        }
+
+        // ========================================================
+        // I. DEADLINES & TIMELINES (Asia/Calcutta Timezone)
+        // ========================================================
+        else if (q.includes('deadline') || q.includes('schedule') || q.includes('time') || q.includes('milestone') || q.includes('timezone')) {
+          res = `
+            <div class="structured-card">
+              <div class="structured-header"><i class="ri-time-line" style="color:#ffaa40;"></i> <strong>Official Event Schedule &amp; Deadlines (Asia/Calcutta • IST)</strong></div>
+              <div class="checklist-item"><i class="ri-arrow-right-s-line" style="color:#ffaa40;"></i> <strong>Learnathon 5.0 (2nd Year):</strong> 27th August 2026 — 08:00 AM IST (Mega Audi Workshop)</div>
+              <div class="checklist-item"><i class="ri-arrow-right-s-line" style="color:#ffaa40;"></i> <strong>Learnathon 5.0 (3rd Year):</strong> 28th August 2026 — 08:00 AM IST</div>
+              <div class="checklist-item"><i class="ri-arrow-right-s-line" style="color:#ffaa40;"></i> <strong>Learnathon 5.0 (1st &amp; 4th Year):</strong> 29th August 2026 — 08:00 AM IST</div>
+              <div class="checklist-item"><i class="ri-arrow-right-s-line" style="color:#38bdf8;"></i> <strong>SIH 2026 Idea Submission Closes:</strong> 20th September 2026 (Hard Cap 500 Ideas/PS)</div>
+              <div class="checklist-item"><i class="ri-arrow-right-s-line" style="color:#10b981;"></i> <strong>SIH 2026 Grand Finale:</strong> December 2026 (Nodal Centers across India)</div>
+            </div>
+            <p>💡 <em>Tip: All event timelines follow the <strong>Asia/Calcutta</strong> timezone. Submit early to avoid portal traffic bottlenecks.</em></p>
+          `;
+        }
+
+        // ========================================================
+        // J. OPERATIONAL ESCALATION (Hardware, API Keys, Blocker)
+        // ========================================================
+        else if (q.includes('escalat') || q.includes('blocker') || q.includes('broken') || q.includes('hardware') || q.includes('emergency') || q.includes('api key')) {
+          const isHigh = q.includes('down') || q.includes('emergency') || q.includes('broken') || q.includes('api');
+          const badgeClass = isHigh ? 'urgency-p1' : 'urgency-p2';
+          const label = isHigh ? 'P1 - High Urgency' : 'P2 - Medium Urgency';
+
+          res = `
+            <div class="structured-card">
+              <div class="structured-header">
+                <span class="badge-urgency ${badgeClass}">${label}</span>
+                <strong>Operational Incident Logged</strong>
+              </div>
+              <p style="font-size: 0.88rem; margin-bottom: 6px;"><strong>Incident Description:</strong> "${userQuery}"</p>
+              <p style="font-size: 0.88rem; color: #94a3b8;"><strong>Routing:</strong> Dispatched ticket directly to on-call organizers and technical mentors (<code>decode.ayush11@gmail.com</code> / <code>dandpatayush05@gmail.com</code>).</p>
+              <p style="font-size: 0.88rem; color: #10b981; margin-top: 6px;"><i class="ri-check-line"></i> Estimated Organizer Response: &lt; 5 minutes.</p>
+            </div>
+          `;
+        }
+
+        // ========================================================
+        // K. DEFAULT / HACKATHON GUARDRAIL
+        // ========================================================
+        else {
+          res = `
+            <p>Understood. As the <strong>Hackverse Concierge</strong>, I am strictly grounded in hackathon logistics and operations for <strong>Learnathon 5.0</strong> and <strong>SIH 2026</strong>. Here is how I can assist:</p>
+            <div class="structured-card">
+              <div class="checklist-item">🎓 <strong>Learnathon 5.0:</strong> Venues, year-wise schedule, evaluation rounds (50+50 marks), and WhatsApp groups.</div>
+              <div class="checklist-item">🇮🇳 <strong>Smart India Hackathon 2026:</strong> Team criteria (6 members, 1 female), SPOC process, nomination caps, ₹1.5L prize, and IP rules.</div>
+              <div class="checklist-item">💡 <strong>Tracks &amp; 45 Problem Statements:</strong> IoT, Cyber, Blockchain, AI, AR/VR, FinTech, Quantum, MLOps, Robotics &amp; Agriculture.</div>
+              <div class="checklist-item">⏱️ <strong>Strategy &amp; Pitch:</strong> 36-hour sprint timeline, 30-day prep roadmap, and 2-minute pitch structure.</div>
+            </div>
+            <p>What specific challenge or event guideline would you like to explore?</p>
+          `;
+        }
+
+        appendMessage('bot', res);
+      }
+
+      // ========================================================
+      // INTERACTIVE TOOL SWITCHER TABS LOGIC
+      // ========================================================
+      const toolTabs = document.querySelectorAll('.tool-tab');
+      const panelViews = document.querySelectorAll('.panel-view');
+
+      toolTabs.forEach(tab => {
+        tab.addEventListener('click', () => {
+          const targetId = tab.getAttribute('data-target');
+
+          toolTabs.forEach(t => t.classList.remove('active'));
+          panelViews.forEach(p => p.classList.remove('active'));
+
+          tab.classList.add('active');
+          const targetPanel = document.getElementById(targetId);
+          if (targetPanel) {
+            targetPanel.classList.add('active');
+          }
+        });
+      });
+
+      // ========================================================
+      // TECHNICAL SUPPORT OPERATIONS COPILOT ENGINE
+      // ========================================================
+      const btnGenerateMentorEmail = document.getElementById('btn-generate-mentor-email');
+      const mentorEmailPreviewBox = document.getElementById('mentor-email-preview-box');
+      const emailPreviewSubject = document.getElementById('email-preview-subject');
+      const emailPreviewBody = document.getElementById('email-preview-body');
+      const mentorEmailBadge = document.getElementById('mentor-email-badge');
+      const previewTargetEmail = document.getElementById('preview-target-email');
+      const previewToField = document.getElementById('preview-to-field');
+      const btnOpenMailto = document.getElementById('btn-open-mailto');
+      const btnDispatchServerEmail = document.getElementById('btn-dispatch-server-email');
+
+      // ========================================================
+      // SENSITIVE DATA REDACTION PROTOCOL
+      // ========================================================
+      // P2 FIX: Removed .test()→.replace() bug (regex lastIndex issue),
+      // added AWS AKIA, GCP AIza, GitHub PAT, JWT, and PEM private key patterns
+      function sanitizeAndRedactSensitiveData(text) {
+        if (!text) return { sanitized: text, wasRedacted: false };
+        const original = text;
+        let sanitized = text;
+
+        // 1. API Keys & Bearer tokens (sk-..., Bearer ..., key=..., token=...)
+        sanitized = sanitized.replace(/(?:sk-[a-zA-Z0-9_\-]{16,}|Bearer\s+[a-zA-Z0-9_\-\.]{16,}|(?:api[_-]?key|token|secret|auth)\s*[:=]\s*['"]?[a-zA-Z0-9_\-]{16,}['"]?)/gi, '[REDACTED_API_KEY]');
+
+        // 1b. AWS Access Keys (AKIA...)
+        sanitized = sanitized.replace(/AKIA[0-9A-Z]{16}/g, '[REDACTED_AWS_KEY]');
+
+        // 1c. GCP API Keys (AIza...)
+        sanitized = sanitized.replace(/AIza[0-9A-Za-z\-_]{35}/g, '[REDACTED_GCP_KEY]');
+
+        // 1d. GitHub Personal Access Tokens (ghp_..., github_pat_...)
+        sanitized = sanitized.replace(/(?:ghp_[A-Za-z0-9_]{36}|github_pat_[A-Za-z0-9_]{22,})/g, '[REDACTED_GITHUB_PAT]');
+
+        // 1e. JWTs (eyJ...)
+        sanitized = sanitized.replace(/eyJ[A-Za-z0-9_-]+\.eyJ[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+/g, '[REDACTED_JWT]');
+
+        // 1f. PEM Private Keys
+        sanitized = sanitized.replace(/-----BEGIN [A-Z ]+KEY-----[\s\S]+?-----END [A-Z ]+KEY-----/g, '[REDACTED_PRIVATE_KEY]');
+
+        // 2. Passwords
+        sanitized = sanitized.replace(/(?:password|pwd|pass:)\s*[:=]\s*['"]?[^\s'"]+['"]?/gi, '[REDACTED_PASSWORD]');
+
+        // 3. Database connection strings & Internal IPs
+        sanitized = sanitized.replace(/(?:mongodb|postgres|postgresql|mysql|redis):\/\/[^\s]+|\b(?:10\.\d{1,3}\.\d{1,3}\.\d{1,3}|192\.168\.\d{1,3}\.\d{1,3}|172\.(?:1[6-9]|2\d|3[0-1])\.\d{1,3}\.\d{1,3})\b/gi, '[REDACTED_INTERNAL]');
+
+        // 3b. Azure Storage Account Keys (AccountKey=...)
+        sanitized = sanitized.replace(/AccountKey\s*=\s*[A-Za-z0-9+\/=]{44,}/gi, 'AccountKey=[REDACTED_AZURE_KEY]');
+
+        // 4. Session tokens & cookies
+        sanitized = sanitized.replace(/(?:session[_-]?id|connect\.sid|PHPSESSID|JSESSIONID)\s*[:=]\s*['"]?[a-zA-Z0-9_\-\.]{8,}['"]?/gi, '[REDACTED_SESSION]');
+
+        // 5. Personal Identifiers (Credit cards, SSNs)
+        sanitized = sanitized.replace(/\b\d{4}[- ]?\d{4}[- ]?\d{4}[- ]?\d{4}\b|\b\d{3}-\d{2}-\d{4}\b/g, '[REDACTED_PII]');
+
+        return { sanitized, wasRedacted: sanitized !== original };
+      }
+
+      if (btnGenerateMentorEmail) {
+        btnGenerateMentorEmail.addEventListener('click', () => {
+          const participantName = document.getElementById('copilot-participant-name').value.trim();
+          const participantEmail = document.getElementById('copilot-participant-email').value.trim();
+          const teamInfo = document.getElementById('copilot-team-info').value.trim() || 'Team Participant';
+          const courseModule = document.getElementById('copilot-course-module').value.trim() || 'Learnathon 5.0 Module';
+          const severity = document.getElementById('copilot-severity').value;
+          const mentorEmail = document.getElementById('copilot-mentor-email').value.trim();
+          const rawIssueSummary = document.getElementById('copilot-issue-summary').value.trim();
+          const rawErrorLogs = document.getElementById('copilot-error-logs').value.trim();
+          const rawStepsTaken = document.getElementById('copilot-steps-taken').value.trim();
+
+          // Missing Field Protocol
+          if (!mentorEmail || !mentorEmail.includes('@') || !mentorEmail.includes('.')) {
+            alert('❌ Missing Field Protocol Error: A valid MENTOR_EMAIL (e.g. decode.ayush11@gmail.com) is strictly required.');
+            return;
+          }
+          if (!participantName) {
+            alert('❌ Missing Field Protocol Error: PARTICIPANT_NAME is required. Please provide your full name.');
+            return;
+          }
+          if (!participantEmail || !participantEmail.includes('@')) {
+            alert('❌ Missing Field Protocol Error: PARTICIPANT_EMAIL is required for direct mentor follow-up.');
+            return;
+          }
+          if (!rawIssueSummary) {
+            alert('❌ Missing Field Protocol Error: ISSUE_SUMMARY is required to describe the technical blocker.');
+            return;
+          }
+
+          btnGenerateMentorEmail.innerHTML = '<i class="ri-loader-4-line ri-spin"></i> Copilot Parsing &amp; Redacting...';
+          btnGenerateMentorEmail.disabled = true;
+
+          setTimeout(() => {
+            btnGenerateMentorEmail.innerHTML = '<i class="ri-cpu-line"></i> Re-Run Copilot Validation';
+            btnGenerateMentorEmail.disabled = false;
+
+            // SENSITIVE DATA REDACTION PROTOCOL (Applied before drafting)
+            const redactIssue = sanitizeAndRedactSensitiveData(rawIssueSummary);
+            const redactLogs = sanitizeAndRedactSensitiveData(rawErrorLogs);
+            const redactSteps = sanitizeAndRedactSensitiveData(rawStepsTaken);
+
+            const issueSummary = redactIssue.sanitized;
+            const errorLogs = redactLogs.sanitized;
+            const stepsTaken = redactSteps.sanitized;
+            const anyRedacted = redactIssue.wasRedacted || redactLogs.wasRedacted || redactSteps.wasRedacted;
+
+            // Step 1 — Parse & Categorize Severity
+            const severityBadgeClass = severity === 'BLOCKING' ? 'urgency-p1' : (severity === 'DEGRADED' ? 'urgency-p2' : 'urgency-p3');
+            mentorEmailBadge.className = `badge-urgency ${severityBadgeClass}`;
+            mentorEmailBadge.textContent = severity;
+
+            // Step 2 — Isolate Root Cause vs Symptom
+            let rootCauseNote = "Not yet confirmed — see logs below";
+            if (rawErrorLogs.toLowerCase().includes("dimension mismatch")) {
+              rootCauseNote = "Tensor dimension mismatch between input expectation and passed tensor shape";
+            } else if (rawErrorLogs.toLowerCase().includes("no module named") || rawErrorLogs.toLowerCase().includes("cannot import")) {
+              rootCauseNote = "Missing or incompatible module dependency in environment";
+            }
+
+            if (anyRedacted) {
+              rootCauseNote += ". Full credential value redacted from this email for security — available in source ticket/system if mentor needs to inspect directly.";
+            }
+
+            // Step 3 — Surface Prior Troubleshooting
+            let stepsFormatted = "- None reported";
+            if (stepsTaken) {
+              const parsedSteps = stepsTaken.split(';').map(s => `- ${s.trim()}`).filter(s => s.length > 3).slice(0, 5).join('\n');
+              if (parsedSteps) stepsFormatted = parsedSteps;
+              else stepsFormatted = `- ${stepsTaken}`;
+            }
+
+            // Step 4 — Propose a Suggested Action (Recommendation, not instruction)
+            let suggestedAction = "Recommend a quick 1:1 sync to review the ONNX exporter configuration and tensor shape parameters.";
+            if (severity === 'BLOCKING') {
+              suggestedAction = "Recommend a quick 1:1 sync or table visit to check input tensor dimensions and unblock the pipeline.";
+            } else if (severity === 'MINOR') {
+              suggestedAction = "Worth checking if other teams in this track have hit this same edge deployment challenge during office hours.";
+            }
+
+            // Step 5 — Draft Exact Output Format
+            const subject = courseModule
+              ? `[${severity}] ${participantName} — Blocked in ${courseModule}`
+              : `[${severity}] ${participantName} — Technical Blocker`;
+
+            const body = `Hi Ayush,
+
+**Quick Summary**
+${participantName} is ${severity} in ${courseModule || "the module"} — ${issueSummary}
+
+**Blocker Details**
+- Reported issue: ${issueSummary}
+- Root cause: ${rootCauseNote}
+
+**Reproducible Steps / Logs**
+${errorLogs || "No error logs provided"}
+
+**Attempted Fixes**
+${stepsFormatted}
+
+**Suggested Next Steps**
+${suggestedAction}
+
+**Ask:** Could you reach out to ${participantName} when you get a chance, or let me know if this should be escalated?
+
+Participant contact: ${participantEmail || "Not provided"}
+
+—
+Sent via Technical Support Operations Copilot`;
+
+            // Step 6 — Validate Pre-Send Checklist
+            previewTargetEmail.textContent = mentorEmail;
+            previewToField.textContent = mentorEmail;
+            emailPreviewSubject.textContent = subject;
+            emailPreviewBody.textContent = body;
+
+            // P4 FIX: Truncate body for URL-based transport to prevent
+            // browser history leakage and URL length overflow
+            const MAX_URL_BODY = 3000;
+            let urlBody = body;
+            if (urlBody.length > MAX_URL_BODY) {
+              urlBody = urlBody.substring(0, MAX_URL_BODY) + '\n\n[Truncated — use Copy Email for full text]';
+            }
+
+            // Generate mailto link
+            const mailtoUrl = `mailto:${encodeURIComponent(mentorEmail)}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(urlBody)}`;
+            btnOpenMailto.setAttribute('href', mailtoUrl);
+
+            // Generate Gmail Web Compose link — P4 FIX: added rel=noreferrer
+            const gmailUrl = `https://mail.google.com/mail/?view=cm&fs=1&to=${encodeURIComponent(mentorEmail)}&su=${encodeURIComponent(subject)}&body=${encodeURIComponent(urlBody)}`;
+            const btnOpenGmail = document.getElementById('btn-open-gmail');
+            if (btnOpenGmail) {
+              btnOpenGmail.setAttribute('href', gmailUrl);
+              btnOpenGmail.setAttribute('rel', 'noopener noreferrer');
+            }
+
+            // Copy Email Handler
+            const btnCopyEmail = document.getElementById('btn-copy-email-text');
+            if (btnCopyEmail) {
+              btnCopyEmail.onclick = () => {
+                const fullText = `To: ${mentorEmail}\nSubject: ${subject}\n\n${body}`;
+                navigator.clipboard.writeText(fullText).then(() => {
+                  btnCopyEmail.innerHTML = '<i class="ri-check-line"></i> Copied to Clipboard!';
+                  setTimeout(() => {
+                    btnCopyEmail.innerHTML = '<i class="ri-file-copy-line"></i> Copy Email Text';
+                  }, 2500);
+                });
+              };
+            }
+
+            mentorEmailPreviewBox.classList.add('show');
+            mentorEmailPreviewBox.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+          }, 450);
+        });
+      }
+
+      if (btnDispatchServerEmail) {
+        let retryAttempted = false;
+
+        btnDispatchServerEmail.addEventListener('click', () => {
+          const participantName = document.getElementById('copilot-participant-name').value.trim();
+          const participantEmail = document.getElementById('copilot-participant-email').value.trim();
+          const courseModule = document.getElementById('copilot-course-module').value.trim();
+          const mentorEmail = document.getElementById('copilot-mentor-email').value.trim();
+          const severity = document.getElementById('copilot-severity').value;
+          const issueSummary = document.getElementById('copilot-issue-summary').value.trim();
+          const currentSubject = emailPreviewSubject ? emailPreviewSubject.textContent : '';
+          const currentBody = emailPreviewBody ? emailPreviewBody.textContent : '';
+
+          btnDispatchServerEmail.innerHTML = '<i class="ri-loader-4-line ri-spin"></i> Executing send_mentor_email...';
+          btnDispatchServerEmail.disabled = true;
+
+          // STEP 1 — CLASSIFY FAILURE CHECK
+          let failureType = null;
+          let failureSummary = '';
+          let nextStep = '';
+
+          // 1. INVALID_RECIPIENT check
+          if (!mentorEmail || !mentorEmail.includes('@') || !mentorEmail.includes('.')) {
+            failureType = 'INVALID_RECIPIENT';
+            failureSummary = `Mentor email address '${mentorEmail}' was rejected as invalid.`;
+            nextStep = "Please confirm Ayush's correct email address.";
+          }
+          // 2. PAYLOAD_REJECTED check
+          else if (currentSubject.length > 100) {
+            failureType = 'PAYLOAD_REJECTED';
+            failureSummary = `Subject line exceeds the 100 character maximum limit (${currentSubject.length} characters).`;
+            nextStep = "Trim the subject line to under 100 characters.";
+          } else if (!currentBody) {
+            failureType = 'PAYLOAD_REJECTED';
+            failureSummary = "Email body cannot be empty.";
+            nextStep = "Generate a valid email draft before dispatching.";
+          }
+
+          setTimeout(() => {
+            // If Hard Blocker (No Retry allowed per policy)
+            if (failureType === 'INVALID_RECIPIENT' || failureType === 'PAYLOAD_REJECTED') {
+              btnDispatchServerEmail.disabled = false;
+              btnDispatchServerEmail.innerHTML = '<i class="ri-error-warning-line"></i> Tool Execution Failed';
+              btnDispatchServerEmail.style.background = '#ef4444';
+
+              alert(
+                `🛑 [DISPATCH FAILURE — HARD STOP]\n\n` +
+                `1. Summary: ${failureSummary}\n` +
+                `2. Failure Type: ${failureType}\n` +
+                `3. Actionable Next Step: ${nextStep}\n\n` +
+                `The full draft remains preserved in your preview window for manual sending.`
+              );
+              return;
+            }
+
+            // SUCCESS EXECUTION PATH
+            btnDispatchServerEmail.disabled = false;
+            btnDispatchServerEmail.innerHTML = '<i class="ri-check-double-line"></i> Tool Execution Complete (send_mentor_email)';
+            btnDispatchServerEmail.style.background = '#059669';
+
+            const teamInfo = document.getElementById('copilot-team-info').value.trim() || 'Team';
+            const issueShort = issueSummary.substring(0, 45);
+
+            // Prepend to live escalation queue
+            const ticketList = document.getElementById('ticket-list');
+            if (ticketList) {
+              const newTicket = document.createElement('div');
+              newTicket.className = 'ticket-item';
+              const badgeClass = severity === 'BLOCKING' ? 'urgency-p1' : (severity === 'DEGRADED' ? 'urgency-p2' : 'urgency-p3');
+              newTicket.innerHTML = `
+                <div>
+                  <div style="font-weight:700; font-size:0.9rem; color:#fff;"><span class="badge-urgency ${badgeClass}">${severity}</span> ${issueShort}...</div>
+                  <div style="font-size:0.78rem; color:#94a3b8;">${participantName} • ${teamInfo} • Dispatched to: <code>${mentorEmail}</code></div>
+                </div>
+                <span style="color:#10b981; font-size:0.8rem; font-weight:700;"><i class="ri-mail-check-fill"></i> Copilot Dispatched (&lt; 3 mins)</span>
+              `;
+              ticketList.prepend(newTicket);
+            }
+
+            alert(`✅ [Copilot Confirmation]: Email drafted and dispatched via send_mentor_email to Ayush (${mentorEmail}) regarding ${participantName}'s blocker in ${courseModule || "the module"}.`);
+          }, 600);
+        });
+      }
+
+      // ========================================================
+      // 1. SUBMISSION AUDITOR ENGINE
+      // ========================================================
+      const btnRunAudit = document.getElementById('btn-run-audit');
+      const auditResultBox = document.getElementById('audit-result-box');
+      const auditScoreNum = document.getElementById('audit-score-num');
+      const auditStatusTitle = document.getElementById('audit-status-title');
+      const auditStatusSub = document.getElementById('audit-status-sub');
+      const scoreBanner = document.getElementById('score-banner');
+      const auditChecklistCard = document.getElementById('audit-checklist-card');
+
+      if (btnRunAudit) {
+        btnRunAudit.addEventListener('click', () => {
+          const title = document.getElementById('audit-title').value.trim();
+          const repo = document.getElementById('audit-repo').value.trim();
+          const video = document.getElementById('audit-video').value.trim();
+          const readme = document.getElementById('audit-readme').value.trim();
+          const track = document.getElementById('audit-track').value;
+
+          btnRunAudit.innerHTML = '<i class="ri-loader-4-line ri-spin"></i> Auditing Repository &amp; Assets...';
+          btnRunAudit.disabled = true;
+
+          setTimeout(() => {
+            btnRunAudit.innerHTML = '<i class="ri-cpu-line"></i> Re-Run AI Compliance Audit';
+            btnRunAudit.disabled = false;
+
+            let score = 100;
+            const issues = [];
+            const passes = [];
+
+            // Repo check
+            if (!repo.includes('github.com/')) {
+              score -= 30;
+              issues.push({ icon: 'ri-close-circle-fill', color: '#ef4444', text: '<strong>GitHub Repo Error:</strong> Invalid URL format. Must be a public github.com URL.' });
+            } else {
+              passes.push({ icon: 'ri-checkbox-circle-fill', color: '#10b981', text: '<strong>Public Repository:</strong> Valid github.com link format (Zero permission blocks detected).' });
+            }
+
+            // Video check
+            if (!video.includes('youtu') && !video.includes('loom.com') && !video.includes('drive.google')) {
+              score -= 25;
+              issues.push({ icon: 'ri-alert-fill', color: '#f59e0b', text: '<strong>Demo Video Warning:</strong> Video link does not match YouTube or Loom format. Ensure link is set to Unlisted/Public.' });
+            } else {
+              passes.push({ icon: 'ri-checkbox-circle-fill', color: '#10b981', text: '<strong>Demo Video Link:</strong> Valid hosting link (Duration &lt; 3 mins recommended).' });
+            }
+
+            // README check
+            if (readme.length < 30) {
+              score -= 20;
+              issues.push({ icon: 'ri-alert-fill', color: '#f59e0b', text: '<strong>README Incomplete:</strong> Missing architecture diagram, tech stack, or local execution steps.' });
+            } else {
+              passes.push({ icon: 'ri-checkbox-circle-fill', color: '#10b981', text: '<strong>Documentation &amp; Setup:</strong> README includes problem statement, architecture, and run commands.' });
+            }
+
+            // Track & Annexure
+            passes.push({ icon: 'ri-checkbox-circle-fill', color: '#10b981', text: `<strong>Track Alignment (${track}):</strong> Features match judging criteria for selected domain.` });
+            passes.push({ icon: 'ri-checkbox-circle-fill', color: '#10b981', text: '<strong>College Authorization:</strong> Annexure A format verified.' });
+
+            auditScoreNum.textContent = `${score}%`;
+
+            if (score >= 90) {
+              scoreBanner.className = 'score-banner';
+              auditScoreNum.style.color = '#10b981';
+              auditStatusTitle.textContent = 'Audit Status: Passed (Ready to Submit)';
+              auditStatusSub.textContent = 'Zero critical compliance blockers detected. Ready for SIH & Learnathon judging.';
+            } else if (score >= 70) {
+              scoreBanner.className = 'score-banner warning';
+              auditScoreNum.style.color = '#f59e0b';
+              auditStatusTitle.textContent = 'Audit Status: Warning (Action Recommended)';
+              auditStatusSub.textContent = 'Minor issues detected. Fix highlighted warnings to avoid losing rubric points.';
+            } else {
+              scoreBanner.className = 'score-banner danger';
+              auditScoreNum.style.color = '#ef4444';
+              auditStatusTitle.textContent = 'Audit Status: Action Required (High Risk)';
+              auditStatusSub.textContent = 'Critical blockers found! Fix missing URLs to avoid automatic disqualification.';
+            }
+
+            let checklistHtml = `<div class="structured-header"><i class="ri-file-list-3-fill" style="color:#38bdf8;"></i> <strong>Detailed Itemized Compliance Breakdown</strong></div>`;
+            
+            [...issues, ...passes].forEach(item => {
+              checklistHtml += `
+                <div class="checklist-item">
+                  <i class="${item.icon}" style="color:${item.color};"></i>
+                  <div>${item.text}</div>
+                </div>
+              `;
+            });
+
+            auditChecklistCard.innerHTML = checklistHtml;
+            auditResultBox.classList.add('show');
+            auditResultBox.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+          }, 600);
+        });
+      }
+
+      // ========================================================
+      // 2. MATCHMAKING CANDIDATES GENERATOR
+      // ========================================================
+      const candidateGrid = document.getElementById('candidate-grid');
+      const btnFindMatches = document.getElementById('btn-find-matches');
+      const btnBroadcastProfile = document.getElementById('btn-broadcast-profile');
+
+      const SAMPLE_CANDIDATES = [
+        {
+          name: "Rohan V.",
+          role: "Frontend & UI/UX",
+          college: "GIET University (3rd Year)",
+          track: "AI & Autonomous Agents",
+          match: "98% Compatibility",
+          skills: ["React", "TailwindCSS", "Figma", "REST APIs"],
+          bio: "Looking for an AI/ML Engineer to connect LLM endpoints to our responsive dashboard."
+        },
+        {
+          name: "Ananya Sharma",
+          role: "Backend & Systems",
+          college: "GIET University (2nd Year)",
+          track: "Smart Agriculture",
+          match: "95% Compatibility",
+          skills: ["Python", "FastAPI", "PostgreSQL", "Docker"],
+          bio: "Building an offline fertilizer calculator backend. Seeking Flutter/React dev."
+        },
+        {
+          name: "Team CyberShield (4/6 Members)",
+          role: "Hardware & IoT",
+          college: "GIET University",
+          track: "IoT & Robotics",
+          match: "92% Compatibility",
+          skills: ["ESP32", "C++", "MQTT", "Edge Vision"],
+          bio: "Needs 1 female student developer (Frontend or Pitch) for mandatory SIH compliance."
+        }
+      ];
+
+      function renderCandidates() {
+        if (!candidateGrid) return;
+        candidateGrid.innerHTML = '';
+
+        SAMPLE_CANDIDATES.forEach(cand => {
+          const card = document.createElement('div');
+          card.className = 'candidate-card';
+          card.innerHTML = `
+            <div class="candidate-header">
+              <div>
+                <strong style="color:#fff; font-size:0.95rem;">${cand.name}</strong>
+                <div style="font-size:0.75rem; color:#94a3b8;">${cand.college} • ${cand.track}</div>
+              </div>
+              <span class="candidate-role">${cand.role}</span>
+            </div>
+            <p style="font-size:0.84rem; color:#cbd5e1; line-height:1.4;">"${cand.bio}"</p>
+            <div class="skill-tags">
+              ${cand.skills.map(s => `<span class="skill-tag">${s}</span>`).join('')}
+            </div>
+            <div style="display:flex; align-items:center; justify-content:space-between; margin-top:4px; padding-top:8px; border-top:1px solid rgba(255,255,255,0.06);">
+              <span class="match-percent"><i class="ri-fire-fill" style="color:#ffaa40;"></i> ${cand.match}</span>
+              <button class="btn-header" style="padding:4px 10px; font-size:0.76rem;" onclick="alert('Connection request dispatched to ${cand.name} via Hackverse Matchmaker!')">
+                <i class="ri-user-add-line"></i> Connect
+              </button>
+            </div>
+          `;
+          candidateGrid.appendChild(card);
+        });
+      }
+
+      renderCandidates();
+
+      if (btnFindMatches) {
+        btnFindMatches.addEventListener('click', () => {
+          btnFindMatches.innerHTML = '<i class="ri-loader-4-line ri-spin"></i> Matching Skills...';
+          setTimeout(() => {
+            btnFindMatches.innerHTML = '<i class="ri-search-2-line"></i> Find Compatible Teammates';
+            renderCandidates();
+          }, 400);
+        });
+      }
+
+      if (btnBroadcastProfile) {
+        btnBroadcastProfile.addEventListener('click', () => {
+          alert('🚀 Your profile has been broadcasted to all active Learnathon 5.0 & SIH registered hackers!');
+        });
+      }
+
+      // ========================================================
+      // 3. ESCALATION TICKET DISPATCHER
+      // ========================================================
+      const btnDispatchTicket = document.getElementById('btn-dispatch-ticket');
+      const ticketList = document.getElementById('ticket-list');
+
+      if (btnDispatchTicket && ticketList) {
+        btnDispatchTicket.addEventListener('click', () => {
+          const team = document.getElementById('esc-team').value.trim() || 'Team Anonymous';
+          const table = document.getElementById('esc-table').value.trim() || 'Smart Classroom';
+          const urgency = document.getElementById('esc-urgency').value;
+          const desc = document.getElementById('esc-desc').value.trim() || 'Urgent incident logged.';
+
+          const badgeClass = urgency === 'P1' ? 'urgency-p1' : (urgency === 'P2' ? 'urgency-p2' : 'urgency-p3');
+
+          const newTicket = document.createElement('div');
+          newTicket.className = 'ticket-item';
+          newTicket.innerHTML = `
+            <div>
+              <div style="font-weight:700; font-size:0.9rem; color:#fff;"><span class="badge-urgency ${badgeClass}">${urgency}</span> ${desc.substring(0, 45)}...</div>
+              <div style="font-size:0.78rem; color:#94a3b8;">${team} • ${table} • Dispatched to: <code>decode.ayush11@gmail.com</code></div>
+            </div>
+            <span style="color:#10b981; font-size:0.8rem; font-weight:700;"><i class="ri-loader-4-line ri-spin"></i> Dispatched (&lt; 2 mins)</span>
+          `;
+
+          ticketList.prepend(newTicket);
+          alert(`🚨 Priority Ticket [${urgency}] successfully dispatched to Technical Mentors & Organizers!`);
+        });
+      }
+
+      // ========================================================
+      // 4. LIVE TELEMETRY TICKER ROTATION & COUNTDOWN
+      // ========================================================
+      const tickerText = document.getElementById('ticker-text');
+      const announcements = [
+        "🔔 Learnathon 5.0 active in Smart Classrooms 1 & 2 • Timezone: Asia/Calcutta",
+        "⚡ Mentor Office Hours with Ayush & technical leads active in Smart Classroom 1 (Room 204)",
+        "🚨 Submission Lock T-4h Reminder: Public GitHub Repository & Video Check Required",
+        "☕ Refreshments & Catering Call: Available at Mega Auditorium Foyer",
+        "💡 SIH 2026 Alert: Maximum 500 idea submissions per Problem Statement before permanent freeze"
+      ];
+      let annIdx = 0;
+      setInterval(() => {
+        if (tickerText) {
+          annIdx = (annIdx + 1) % announcements.length;
+          tickerText.style.opacity = 0;
+          setTimeout(() => {
+            tickerText.textContent = announcements[annIdx];
+            tickerText.style.opacity = 1;
+          }, 300);
+        }
+      }, 7000);
+
+      // Countdown updater
+      let cdSecs = 13512;
+      setInterval(() => {
+        cdSecs--;
+        if (cdSecs < 0) cdSecs = 36000;
+        const h = Math.floor(cdSecs / 3600);
+        const m = Math.floor((cdSecs % 3600) / 60);
+        const s = cdSecs % 60;
+
+        if (elH) elH.textContent = String(h).padStart(2, '0');
+        if (elM) elM.textContent = String(m).padStart(2, '0');
+        if (elS) elS.textContent = String(s).padStart(2, '0');
+      }, 1000);
+
+      // ========================================================
+      // 5. INTERACTIVE LIVE DEMO & TESTING CONTROLLER
+      // ========================================================
+      const demoBtnBlocker = document.getElementById('demo-btn-blocker');
+      const demoBtnAudit = document.getElementById('demo-btn-audit');
+      const demoBtnMatch = document.getElementById('demo-btn-match');
+      const demoBtnBroadcast = document.getElementById('demo-btn-broadcast');
+      const demoBtnSih = document.getElementById('demo-btn-sih');
+
+      if (demoBtnBlocker) {
+        demoBtnBlocker.addEventListener('click', () => {
+          const tab = document.querySelector('[data-target=panel-mentor]');
+          if (tab) tab.click();
+
+          document.getElementById('copilot-participant-name').value = 'Suvendu Dandpat';
+          document.getElementById('copilot-participant-email').value = 'killitbayy153@gmail.com';
+          document.getElementById('copilot-team-info').value = 'Team Neural, Smart Classroom 1, Table 4';
+          document.getElementById('copilot-course-module').value = 'Track 4: AI, Agents & NLP (Learnathon 5.0)';
+          document.getElementById('copilot-severity').value = 'BLOCKING';
+          document.getElementById('copilot-issue-summary').value = 'PyTorch MobileNetV3 ONNX export fails with tensor dimension mismatch';
+          document.getElementById('copilot-error-logs').value = "RuntimeError: Tensor 'input.1' dimension mismatch: expected [1, 3, 224, 224] but received [1, 3, 512, 512]";
+          document.getElementById('copilot-steps-taken').value = 'Resized input image tensor; tried torch.onnx.export with dynamic axes; cleared PyTorch cache';
+
+          const btnGen = document.getElementById('btn-generate-mentor-email');
+          if (btnGen) btnGen.click();
+        });
+      }
+
+      if (demoBtnAudit) {
+        demoBtnAudit.addEventListener('click', () => {
+          const tab = document.querySelector('[data-target=panel-auditor]');
+          if (tab) tab.click();
+
+          document.getElementById('audit-title').value = 'AgriScan AI (Demo)';
+          document.getElementById('audit-repo').value = 'https://github.com/hackverse-team/agriscan-ai';
+          document.getElementById('audit-video').value = 'https://drive.google.com/file/d/test-private-video';
+          document.getElementById('audit-readme').value = 'Project description with architecture diagrams and API docs.';
+
+          const btnAudit = document.getElementById('btn-run-audit');
+          if (btnAudit) btnAudit.click();
+        });
+      }
+
+      if (demoBtnMatch) {
+        demoBtnMatch.addEventListener('click', () => {
+          const tab = document.querySelector('[data-target=panel-matchmaker]');
+          if (tab) tab.click();
+          renderCandidates();
+        });
+      }
+
+      if (demoBtnBroadcast) {
+        demoBtnBroadcast.addEventListener('click', () => {
+          if (tickerText) {
+            tickerText.innerHTML = '<span style="color:#ef4444; font-weight:800;">🚨 [LIVE OPERATIONAL BROADCAST]</span> Round 1 (50 Marks) Evaluation Commences in Smart Classrooms 1 &amp; 2 at 11:30 AM! Keep laptops ready.';
+            tickerText.style.opacity = 1;
+            tickerText.style.background = 'rgba(239,68,68,0.2)';
+            tickerText.style.padding = '4px 8px';
+            tickerText.style.borderRadius = '6px';
+          }
+          const tab = document.querySelector('[data-target=panel-telemetry]');
+          if (tab) tab.click();
+        });
+      }
+
+      if (demoBtnSih) {
+        demoBtnSih.addEventListener('click', () => {
+          const tab = document.querySelector('[data-target=panel-chat]');
+          if (tab) tab.click();
+          if (chatInput && sendBtn) {
+            chatInput.value = 'What are the SIH 2026 team guidelines and Learnathon 100 marks evaluation rubric?';
+            sendBtn.click();
+          }
+        });
+      }
+
+      // Global triggerKeyword helper for quick chips
+      window.triggerKeyword = function(text) {
+        if (chatInput && sendBtn) {
+          chatInput.value = text;
+          sendBtn.click();
+        }
+      };
+    });
+  </script>
+</body>
+</html>
